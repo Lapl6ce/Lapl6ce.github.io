@@ -2,23 +2,22 @@
 
 **Live site: https://lapl6ce.github.io**
 
-Personal portfolio of Ebrahim Daginawala, a Computer Science student at York University and freelance
-full-stack developer. Built with Next.js, React and TypeScript, exported as a fully static site, and
+Hi this is my personal site. My name is Ebrahim, a Computer Science student at York University and freelance
+full-stack developer. 
+
+Built with Next.js, React and TypeScript, exported as a fully static site, and
 deployed to GitHub Pages.
 
 ## Two modes, one site
 
 | Mode | Address | Description |
 |------|---------|-------------|
-| **Classic** | [lapl6ce.github.io](https://lapl6ce.github.io) | A clean, professional single page covering experience, projects, skills, education and contact details. |
-| **XMB** | [lapl6ce.github.io/play](https://lapl6ce.github.io/play/) | An experimental interface modelled on handheld-console menus, with animated backgrounds, menu sounds, ambient music and full-screen project backdrops. |
-
-Both modes render from the same content source, so the information always matches. Each mode links to
-the other, and their styles are fully separated.
+| **Classic** | [lapl6ce.github.io](https://lapl6ce.github.io) | The clean, professional looking version. |
+| **Plat** | [lapl6ce.github.io/play](https://lapl6ce.github.io/play/) | The fun version where I want to try different aesthetics.|
 
 ## Features
 
-### Classic mode
+### Classic
 
 - Responsive layout with a wide, multi-column project grid on large screens.
 - Project cards with live website previews: clickable browser-window cards showing real screenshots of
@@ -26,7 +25,7 @@ the other, and their styles are fully separated.
 - Projects without a live site show a screenshot, a small how-it-works diagram, or a generated cover.
 - Subtle click sounds with a mute toggle, and a print stylesheet that turns the page into a one-pager.
 
-### XMB mode
+### Play
 
 - **Console-style navigation:** a horizontal row of categories with vertical item lists, driven by arrow
   keys, mouse clicks and scrolling, or touch swipes.
