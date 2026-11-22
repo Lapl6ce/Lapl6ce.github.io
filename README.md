@@ -27,8 +27,10 @@ deployed to GitHub Pages.
 
 ### Play
 
-- **Console-style navigation:** a horizontal row of categories with vertical item lists, driven by arrow
-  keys, mouse clicks and scrolling, or touch swipes.
+- **Console-style navigation:** a horizontal row of categories with vertical item lists, modelled on
+  the XMB ("XrossMediaBar") menu of handheld consoles. Controlled with the arrow keys, Enter and Escape,
+  or with mouse clicks and the scroll wheel; on-screen hints show both, and touch screens use swipes
+  and taps instead.
 - **Project backdrops:** resting on a project fades a full-screen background in behind the menu, in the
   way game consoles display a game's artwork. Screenshots are dimmed and softened to keep the menu
   readable. Projects without one receive generated artwork in a colour derived from the project name.
@@ -57,10 +59,10 @@ commands, which print portfolio details, open the résumé, and switch between t
 
 ```
 src/content/site.ts               single source of all portfolio content
-src/app/(classic)/                classic mode: layout, page and styles
-src/app/(xmb)/play/               XMB mode: layout, page and styles
-src/components/classic/           website previews, project media, sound toggle, starfield
-src/components/xmb/Xmb.tsx        XMB menu: categories, items, panels and input handling
+src/app/(classic)/                classic version: layout, page and styles
+src/app/(xmb)/play/               play version: layout, page and styles
+src/components/classic/           play-version link, website previews, project media, sound toggle, starfield
+src/components/xmb/Xmb.tsx        play version menu: categories, items, panels and input handling
 src/components/xmb/Backdrop.tsx   full-screen project backdrops
 src/components/xmb/Wave.tsx       animated wave background
 src/components/Terminal.tsx       backtick terminal shared by both modes
@@ -74,6 +76,6 @@ public/assets/                    résumé and website screenshots
 
 ```bash
 npm install
-npm run dev     # http://localhost:3000 (classic) and http://localhost:3000/play/ (XMB)
+npm run dev     # http://localhost:3000 (classic) and http://localhost:3000/play/ (play)
 npm run build   # static export to out/
 ```

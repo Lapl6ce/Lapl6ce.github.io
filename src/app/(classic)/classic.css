@@ -135,13 +135,51 @@ kbd {
   transition: border-color 0.15s ease, color 0.15s ease;
 }
 .mode-switch:hover { color: var(--text); border-color: var(--accent); text-decoration: none; }
-.mode-switch-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #6ec6ff, #b388ff);
-  box-shadow: 0 0 8px #8fb4e8;
+.mode-switch-icon {
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: #b3a4ff;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
+.mode-switch-icon circle { fill: #8fd3ff; stroke: none; }
+
+/* "fun mode" caption: shown briefly on a first visit, then on hover/focus */
+.fun-mode { position: relative; display: inline-flex; }
+.fun-tip {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  white-space: nowrap;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.4rem 0.65rem;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+  opacity: 0;
+  translate: 0 -4px;
+  pointer-events: none;
+  transition: opacity 0.25s ease, translate 0.25s ease;
+}
+.fun-tip::before { /* little arrow pointing at the button */
+  content: "";
+  position: absolute;
+  top: -5px;
+  right: 1.4rem;
+  width: 8px;
+  height: 8px;
+  background: var(--bg-raised);
+  border-left: 1px solid var(--border);
+  border-top: 1px solid var(--border);
+  rotate: 45deg;
+}
+.fun-mode.show-tip .fun-tip,
+.fun-mode:hover .fun-tip,
+.fun-mode:focus-within .fun-tip { opacity: 1; translate: 0 0; }
 
 /* ---------- layout ---------- */
 
@@ -533,7 +571,8 @@ h3 { font-size: 1.02rem; font-weight: 600; line-height: 1.4; }
 
 @media (max-width: 720px) {
   .nav-links { display: none; }
-  .mode-switch { margin-left: auto; }
+  .fun-mode { margin-left: auto; }
+  .fun-tip { white-space: normal; width: 12rem; }
 }
 
 @media (max-width: 640px) {
@@ -585,4 +624,4 @@ h3 { font-size: 1.02rem; font-weight: 600; line-height: 1.4; }
   stroke-linecap: round;
   stroke-linejoin: round;
 }
-@media (max-width: 720px) { .sound-toggle { margin-left: auto; } .mode-switch { margin-left: 0; } }
+@media (max-width: 720px) { .sound-toggle { margin-left: auto; } .fun-mode { margin-left: 0; } }

@@ -322,6 +322,7 @@ export const SITE: Site = {
 
   // ---------- changelog (XMB "System Information") ----------
   changelog: [
+    { version: "4.1", date: "2026-11", note: "Fun mode: project backdrops, ambient music, new menu sounds." },
     { version: "4.0", date: "2026-11", note: "Rebuilt in React with Next.js." },
     { version: "3.1", date: "2026-11", note: "Filled in from résumé; added website previews." },
     { version: "3.0", date: "2026-11", note: "Merged both sites; added XMB mode." },

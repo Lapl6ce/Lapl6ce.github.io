@@ -87,7 +87,7 @@ export default function Terminal({ mode, onGo }: Props) {
         "  skills     list my stack",
         "  contact    how to reach me",
         "  resume     open my résumé",
-        mode === "xmb" ? "  classic    switch to the classic site" : "  xmb        switch to the XMB version",
+        mode === "xmb" ? "  classic    switch to the professional site" : "  fun        switch to fun mode (console-style)",
         "  clear      clear the screen",
         "  exit       close this terminal",
       ].join("\n"),
@@ -107,9 +107,13 @@ export default function Terminal({ mode, onGo }: Props) {
       window.open(SITE.resume, "_blank", "noopener");
       return "opening résumé...";
     },
+    fun: () => {
+      location.href = "/play/";
+      return "booting fun mode...";
+    },
     xmb: () => {
       location.href = "/play/";
-      return "booting XMB...";
+      return "booting fun mode...";
     },
     classic: () => {
       location.href = "/";

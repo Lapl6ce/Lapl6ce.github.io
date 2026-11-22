@@ -467,42 +467,30 @@ a { color: inherit; }
 .hint {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
+  gap: 8px;
   font-size: 0.85rem;
   text-shadow: var(--shadow);
-  opacity: 0.9;
+  opacity: 0.85;
+  cursor: default;
 }
 .hint:hover { opacity: 1; }
+.hint-keys { display: inline-flex; align-items: center; gap: 3px; }
 .hint kbd {
+  min-width: 20px;
+  text-align: center;
   font-family: var(--font-mono-family), monospace;
-  font-size: 0.68rem;
-  color: var(--text-faint);
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  border-radius: 3px;
-  padding: 0 4px;
+  font-size: 0.7rem;
+  line-height: 1;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  padding: 3px 5px 2px;
 }
-
-/* face-button style glyphs, drawn in CSS */
-.glyph {
-  position: relative;
-  width: 20px; height: 20px;
-  border-radius: 50%;
-  background: radial-gradient(circle at 50% 30%, #6b6f78, #2a2c31);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.35), 0 1px 2px rgba(0, 0, 0, 0.5);
-}
-.glyph::before, .glyph::after { content: ""; position: absolute; inset: 0; margin: auto; }
-.glyph-x::before, .glyph-x::after { width: 11px; height: 2px; background: #a9c6ff; border-radius: 1px; transform: rotate(45deg); }
-.glyph-x::after { transform: rotate(-45deg); }
-.glyph-o::before { width: 9px; height: 9px; border: 2px solid #ff8f8f; border-radius: 50%; }
-.glyph-tri::before {
-  width: 10px; height: 9px;
-  background: #7ee0b5;
-  clip-path: polygon(50% 0, 100% 100%, 0 100%, 50% 0, 50% 28%, 21% 82%, 79% 82%, 50% 28%);
-}
-.glyph-dpad { border-radius: 3px; background: none; box-shadow: none; }
-.glyph-dpad::before, .glyph-dpad::after { background: #ddd; border-radius: 2px; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.5); }
-.glyph-dpad::before { width: 6px; height: 18px; }
-.glyph-dpad::after { width: 18px; height: 6px; }
+.hint-mouse { margin-left: 4px; font-size: 0.75rem; color: var(--text-faint); }
+.hint-touch { display: none; font-size: 0.8rem; color: var(--text-dim); }
+.hint-label { font-weight: 500; }
 
 /* ---------- boot screen ---------- */
 
@@ -572,11 +560,13 @@ a { color: inherit; }
   .xmb-root.panel-open .stage { opacity: 0; }
 
   .hints { justify-content: center; gap: 16px; }
-  .hint kbd { display: none; }
+  .hint-mouse { display: none; }
 }
 
+/* touch screens: no keyboard or mouse, so show the gesture instead */
 @media (hover: none) {
-  .hint kbd { display: none; }
+  .hint-keys, .hint-no-touch { display: none; }
+  .hint-touch { display: inline; }
 }
 
 @media (prefers-reduced-motion: reduce) {

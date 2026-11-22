@@ -111,7 +111,7 @@ export default function Xmb() {
             title: "Background Music", icon: "music", sub: musicOn ? "On" : "Off",
             action: () => setMusicOn(!isMusicOn()),
           },
-          { title: "Classic Site", icon: "swap", sub: "Switch to the professional layout", href: "/" },
+          { title: "Professional Site", icon: "swap", sub: "Switch to the professional layout", href: "/" },
           { title: "System Information", icon: "info", sub: "Version and update history", panel: () => <SystemPanel theme={themeName} /> },
         ],
       },
@@ -435,9 +435,9 @@ export default function Xmb() {
       <Backdrop p={backdrop} />
 
       <header className="topbar">
-        <a className="back-classic" href="/" title="Switch to the classic site">
+        <a className="back-classic" href="/" title="Switch to the professional site">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg>
-          Classic site
+          Professional site
         </a>
         <button
           type="button"
@@ -544,16 +544,16 @@ export default function Xmb() {
       <footer className="hints">
         {panel ? (
           <>
-            <Hint glyph="o" label="Back" kbd="Esc" onClick={closePanel} />
-            <Hint glyph="dpad" label="Scroll" kbd="↑↓" />
+            <Hint keys={["Esc"]} mouse="click outside" touch="Tap outside" label="Back" onClick={closePanel} />
+            <Hint keys={["↑", "↓"]} mouse="scroll" touch="Swipe" label="Scroll" />
           </>
         ) : (
           <>
-            <Hint glyph="x" label="Enter" kbd="Enter" onClick={() => activate(cat, selOf(cat))} />
-            <Hint glyph="dpad" label="Navigate" kbd="←↑↓→" />
+            <Hint keys={["←", "↑", "↓", "→"]} mouse="scroll" touch="Swipe" label="Navigate" />
+            <Hint keys={["Enter"]} mouse="click" touch="Tap" label="Open" onClick={() => activate(cat, selOf(cat))} />
           </>
         )}
-        <Hint glyph="tri" label="Terminal" kbd="`" onClick={() => { play("select"); openTerminal(); }} />
+        <Hint keys={["`"]} mouse="click" touch="Tap" label="Terminal" onClick={() => { play("select"); openTerminal(); }} />
       </footer>
 
       <div className="sr-only" aria-live="polite">{announce}</div>
@@ -572,12 +572,16 @@ export default function Xmb() {
   );
 }
 
-function Hint({ glyph, label, kbd, onClick }: { glyph: string; label: string; kbd: string; onClick?: () => void }) {
+/** Control hint: keyboard keys + the mouse equivalent (touch wording on touch screens). */
+function Hint({ keys, mouse, touch, label, onClick }: { keys: string[]; mouse: string; touch?: string; label: string; onClick?: () => void }) {
   return (
-    <button className="hint" tabIndex={-1} onMouseDown={noFocus} onClick={onClick}>
-      <span className={"glyph glyph-" + glyph} aria-hidden="true" />
-      {label}
-      <kbd>{kbd}</kbd>
+    <button className={"hint" + (touch ? "" : " hint-no-touch")} tabIndex={-1} onMouseDown={noFocus} onClick={onClick}>
+      <span className="hint-keys">
+        {keys.map((k) => <kbd key={k}>{k}</kbd>)}
+        <span className="hint-mouse">or {mouse}</span>
+      </span>
+      {touch && <span className="hint-touch">{touch}</span>}
+      <span className="hint-label">{label}</span>
     </button>
   );
 }

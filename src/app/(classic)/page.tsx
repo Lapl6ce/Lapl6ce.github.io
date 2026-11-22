@@ -4,6 +4,7 @@ import Starfield from "@/components/classic/Starfield";
 import Terminal from "@/components/Terminal";
 import HeroName from "@/components/classic/HeroName";
 import SoundToggle from "@/components/classic/SoundToggle";
+import FunModeLink from "@/components/classic/FunModeLink";
 
 const ext = (url: string) => (/^https?:/.test(url) ? { target: "_blank", rel: "noopener" } : {});
 const links = Object.entries(SITE.links).filter((e): e is [string, string] => !!e[1]);
@@ -53,11 +54,7 @@ export default function ClassicPage() {
             <li><a href="#contact">Contact</a></li>
           </ul>
           <SoundToggle />
-          {/* plain <a>: switching modes is a full page load */}
-          <a className="mode-switch" href="/play/" title="Switch to the experimental XMB version">
-            <span className="mode-switch-dot" aria-hidden="true" />
-            XMB mode
-          </a>
+          <FunModeLink />
         </nav>
       </header>
 
@@ -213,7 +210,7 @@ export default function ClassicPage() {
 
       <footer className="site-footer">
         <p>
-          © {new Date().getFullYear()} {SITE.name} · <a href="/play/">try the XMB version</a> · press <kbd>`</kbd> for a terminal
+          © {new Date().getFullYear()} {SITE.name} · <a href="/play/">try fun mode</a>, a console-style version of this site · press <kbd>`</kbd> for a terminal
         </p>
       </footer>
 
