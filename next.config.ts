@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { PHASE_DEVELOPMENT_SERVER } from "next/constants";
 
 const nextConfig: NextConfig = {
   // Static HTML in out/, so any static host (GitHub Pages) can serve it.
@@ -10,4 +11,9 @@ const nextConfig: NextConfig = {
   images: { unoptimized: true },
 };
 
-export default nextConfig;
+export default function config(phase: string): NextConfig {
+  if (phase !== PHASE_DEVELOPMENT_SERVER) return nextConfig;
+  // `*.dev.ts(x)` routes (the in-page editor's save endpoints and /settings) exist
+  // only under `next dev`. A static export can't serve POST routes, so the build must not see them.
+  return { ...nextConfig, pageExtensions: ["tsx", "ts", "jsx", "js", "dev.tsx", "dev.ts"] };
+}

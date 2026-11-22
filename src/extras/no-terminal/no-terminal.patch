@@ -1,0 +1,58 @@
+--- a/src/app/(professional)/page.tsx
++++ b/src/app/(professional)/page.tsx
+@@ -1,6 +1,5 @@
+ // Sections live in src/professional/sections; their order here is the page order.
+ 
+-import Terminal from "@/shared/Terminal";
+ import ScrollEffects from "@/professional/components/ScrollEffects";
+ import OwnerTodo from "@/professional/owner/OwnerTodo";
+ import Header from "@/professional/sections/Header";
+@@ -34,7 +33,6 @@
+       <Footer />
+       <ScrollEffects />
+       {process.env.NODE_ENV === "development" && <OwnerTodo />}
+-      <Terminal mode="professional" />
+     </>
+   );
+ }
+--- a/src/professional/components/HeroName.tsx
++++ b/src/professional/components/HeroName.tsx
+@@ -1,12 +1,11 @@
+ "use client";
+ 
+-import { openTerminal } from "@/shared/Terminal";
+ import { ASCII_NAME } from "./asciiName";
+ 
+-/** The hero heading, drawn as an ASCII banner. Clicking it opens the terminal. */
++/** The hero heading, drawn as an ASCII banner. */
+ export default function HeroName({ name }: { name: string }) {
+   return (
+-    <h1 className="ascii-name" onClick={openTerminal}>
++    <h1 className="ascii-name">
+       <span className="sr-only">{name}</span>
+       <pre aria-hidden="true">
+         {ASCII_NAME.map((line, i) => (
+--- a/src/professional/sections/Footer.tsx
++++ b/src/professional/sections/Footer.tsx
+@@ -6,7 +6,7 @@
+     <footer className="site-footer">
+       <p>
+         © {new Date().getFullYear()} {SITE.name} · <a href={ROUTES.play}>try fun mode</a>, a console-style version of this
+-        site · press <kbd>`</kbd> for a terminal
++        site
+       </p>
+       <p className="eof" aria-hidden="true">
+         -- EOF --
+--- a/src/professional/professional.css
++++ b/src/professional/professional.css
+@@ -237,10 +237,7 @@
+   font-weight: 500;
+   line-height: 1.15;
+   color: var(--text);
+-  cursor: pointer;
+-  transition: color 0.3s ease;
+ }
+-.ascii-name:hover { color: var(--accent); }
+ .ascii-name pre { font: inherit; }
+ .ascii-line {
+   display: block;

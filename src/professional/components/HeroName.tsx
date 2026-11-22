@@ -1,12 +1,11 @@
 "use client";
 
-import { openTerminal } from "@/shared/Terminal";
 import { ASCII_NAME } from "./asciiName";
 
-/** The hero heading, drawn as an ASCII banner. Clicking it opens the terminal. */
+/** The hero heading, drawn as an ASCII banner. */
 export default function HeroName({ name }: { name: string }) {
   return (
-    <h1 className="ascii-name" title="psst, click me" onClick={openTerminal}>
+    <h1 className="ascii-name">
       <span className="sr-only">{name}</span>
       <pre aria-hidden="true">
         {ASCII_NAME.map((line, i) => (

@@ -7,10 +7,11 @@ import { useEffect, useState } from "react";
 import { isSoundOn, onSoundChange, play, setSoundOn } from "@/shared/sfx";
 
 export default function SoundToggle() {
-  const [on, setOn] = useState(true);
+  // off until the visitor opts in: many first visits are from a shared office
+  const [on, setOn] = useState(false);
 
   useEffect(() => {
-    setOn(isSoundOn());
+    setOn(isSoundOn(false));
     const unsubscribe = onSoundChange(setOn);
 
     const onClick = (e: MouseEvent) => {
@@ -34,14 +35,14 @@ export default function SoundToggle() {
   return (
     <button
       type="button"
-      className="sound-toggle"
+      className="nav-toggle"
       data-sound-toggle
       onClick={toggle}
       aria-pressed={on}
       aria-label={on ? "Mute sound effects" : "Turn on sound effects"}
       title={on ? "Sound effects on" : "Sound effects off"}
     >
-      snd:<span className="sound-state">{on ? "on" : "off"}</span>
+      snd:<span className="toggle-state">{on ? "on" : "off"}</span>
     </button>
   );
 }

@@ -5,9 +5,16 @@
      1. `sites`: a live site as a clickable browser-window screenshot
         ({ name, url, image }; image in public/assets/previews/, 16:10; entries without a url are hidden)
      2. `preview`: a screenshot of the project itself
-     3. `flow`: steps for a small how-it-works diagram, e.g. ["Shopify", "Middleware", "WordPress"]
-     4. a generated cover from the name and tags
-   `featured: true` sorts a project first. */
+     3. `imageNeeded`: the screenshot at that path, or an IMAGE NEEDED box until the file exists
+     4. `flow`: steps for a small how-it-works diagram, e.g. ["Shopify", "Middleware", "WordPress"]
+     5. a generated cover from the name and tags
+   `featured: true` sorts a project first; featured projects can also carry a `caseStudy`.
+
+   Placeholder strings are shown on the page as-is; TODO-OWNER.md lists them all.
+   On `npm run dev` the hand-written fields can be edited and saved from the page,
+   and /settings switches on demo mode (see demo.ts) for builds that go online first. */
+
+import { DEMO_ACTIVE, withDemo } from "./demo";
 
 export type SitePreview = { name: string; url: string; image?: string };
 
@@ -40,6 +47,19 @@ export type Project = {
   preview?: string;
   /** steps for a how-it-works diagram, used when there is no screenshot */
   flow?: string[];
+  /** where a screenshot will go, e.g. "/assets/previews/sync-system.jpg"; shown once the file exists */
+  imageNeeded?: string;
+  /** longer write-up under a featured project; fun mode ignores it */
+  caseStudy?: CaseStudy;
+};
+
+export type CaseStudy = {
+  problem: string;
+  approach: string;
+  whatBroke: string;
+  result: string;
+  /** paths under public/, e.g. "/assets/previews/sync-dashboard.jpg" */
+  images: string[];
 };
 
 export type Site = {
@@ -53,6 +73,10 @@ export type Site = {
   resume?: string;
   links: Partial<Record<"github" | "linkedin" | "upwork", string>>;
   summary: string;
+  /** one line on current work, shown in the hero as "now: ..." */
+  now?: string;
+  /** portrait beside the About text, e.g. "/assets/photo.jpg" */
+  photo?: string;
   /** availability line shown above the contact details */
   contactNote: string;
   about: string[];
@@ -80,7 +104,8 @@ export const hueOf = (name: string) => {
 };
 export const featuredFirst = (ps: Project[]) => [...ps].sort((a, b) => Number(!!b.featured) - Number(!!a.featured));
 
-export const SITE: Site = {
+// The draft as written. Pages read SITE below, which is this with demo mode applied when it is on.
+const DRAFT: Site = {
   name: "Ebrahim Daginawala",
   handle: "ebrahim",
   role: "Computer Science Student & Freelance Full-Stack Developer",
@@ -95,23 +120,18 @@ export const SITE: Site = {
     upwork: "https://www.upwork.com/freelancers/~01ddd67c430e08843d",
   },
 
-  summary:
-    "Second-year Computer Science student at York University and freelance full-stack developer. " +
-    "I build web applications, API integrations and automation that help businesses run more reliably.",
+  summary: "TODO(owner): one or two sentences in your own words: what you build and one concrete example",
+  now: "TODO(owner): what you're working on or learning right now, one line",
+  // Optional: remove this line to show an IMAGE NEEDED box instead, or remove the slot in About.tsx.
+  photo: "/assets/photo.jpg", // .jpeg, .png or .webp with the same name also work
 
-  contactNote: "Open to software development internships and freelance work. Email is the fastest way to reach me.",
+  contactNote: "TODO(owner): one line on what you're looking for and how to reach you",
 
   // one string per paragraph
   about: [
-    "I'm a second-year Computer Science student at York University in Toronto, and I freelance as a " +
-      "full-stack developer. I work mostly in Java, Python and TypeScript, with React, Node.js and Next.js " +
-      "on the web side, and I'm currently learning Rust.",
-    "My main client right now is AKD Jewelers, a retailer in Mumbai. I built the Shopify–WordPress sync " +
-      "that keeps inventory and orders consistent across their two sites, plus a custom Shopify dashboard so " +
-      "non-technical staff can monitor it. I'm now building them a lightweight CRM.",
-    "Before York, I completed the IB Diploma at JBCN International School in Mumbai on a full-tuition " +
-      "scholarship. Outside of code I've founded a STEAM club, served as Cultural Captain, finished the " +
-      "Tata Mumbai Marathon 10 km, and won a national online debate final.",
+    "TODO(owner): paragraph 1: who you are and what you like building, in your own voice",
+    "TODO(owner): paragraph 2: the AKD Jewelers work and what was hard about it",
+    "TODO(owner): paragraph 3: something outside code that matters to you",
   ],
 
   // most recent first
@@ -173,6 +193,13 @@ export const SITE: Site = {
       links: {},
       featured: true,
       sites: [{ name: "Dagina Designs", url: "https://www.dagina.design/", image: "/assets/previews/dagina-designs.jpg" }],
+      caseStudy: {
+        problem: "TODO(owner): Dagina Designs, the problem: what needed solving, for whom, and why it mattered",
+        approach: "TODO(owner): Dagina Designs, the approach: what you built and the key decisions",
+        whatBroke: "TODO(owner): Dagina Designs, what broke: the hardest bug or failure and how you fixed it",
+        result: "TODO(owner): Dagina Designs, the result: what changed for the users, with numbers if you have them",
+        images: ["/assets/previews/dagina-case.jpg"],
+      },
     },
     {
       name: "JBCN MUN Website",
@@ -197,8 +224,15 @@ export const SITE: Site = {
       links: {},
       flow: ["Shopify store", "Webhook middleware on Render", "WordPress + ARMember"],
       featured: true,
+      imageNeeded: "/assets/previews/sync-system.jpg",
+      caseStudy: {
+        problem: "TODO(owner): Sync System, the problem: what needed solving, for whom, and why it mattered",
+        approach: "TODO(owner): Sync System, the approach: what you built and the key decisions",
+        whatBroke: "TODO(owner): Sync System, what broke: the hardest bug or failure and how you fixed it",
+        result: "TODO(owner): Sync System, the result: what changed for the users, with numbers if you have them",
+        images: ["/assets/previews/sync-dashboard.jpg"],
+      },
     },
-    // thrift_feed: add a screenshot as `preview` and, once deployed, a `sites` entry.
     {
       name: "thrift_feed",
       year: "",
@@ -210,6 +244,14 @@ export const SITE: Site = {
       links: {},
       flow: ["Next.js 15 storefront", "Drizzle ORM", "Neon Postgres"],
       featured: true,
+      sites: [{ name: "thrift_feed", url: "https://thrifty-brown.vercel.app/", image: "/assets/previews/thrift-feed.jpg" }],
+      caseStudy: {
+        problem: "TODO(owner): thrift_feed, the problem: what needed solving, for whom, and why it mattered",
+        approach: "TODO(owner): thrift_feed, the approach: what you built and the key decisions",
+        whatBroke: "TODO(owner): thrift_feed, what broke: the hardest bug or failure and how you fixed it",
+        result: "TODO(owner): thrift_feed, the result: what changed for the users, with numbers if you have them",
+        images: ["/assets/previews/thrift-feed-shop.jpg", "/assets/previews/thrift-feed-drop.jpg"],
+      },
     },
     {
       name: "CRM Base",
@@ -219,7 +261,7 @@ export const SITE: Site = {
         "A CRM foundation designed to be forked per client: a swappable data layer, self-contained modules, " +
         "and architecture rules enforced by lint. Reused as the base for AKD Jewelers' customer-tracking app.",
       tags: ["React", "TypeScript"],
-      links: {},
+      links: { code: "https://github.com/Lapl6ce/crm-base" },
       preview: "/assets/previews/crm-base.jpg",
     },
     {
@@ -228,7 +270,7 @@ export const SITE: Site = {
       blurb: "Full-stack learning management system modeled on a university eClass.",
       description: "A full-stack learning management system modeled on a university eClass.",
       tags: ["Full-stack"],
-      links: {},
+      links: { code: "https://github.com/Lapl6ce/group-project-1012" },
     },
     {
       name: "AI 3D Asset Generator",
@@ -236,7 +278,7 @@ export const SITE: Site = {
       blurb: "Generates 3D assets from images for use in game engines.",
       description: "A tool that generates 3D assets from images for use in game engines.",
       tags: ["AI", "Image-to-3D", "Game engines"],
-      links: {},
+      links: { code: "https://github.com/anthskti/fabfab" },
     },
     {
       name: "Vaie",
@@ -251,6 +293,19 @@ export const SITE: Site = {
       links: { code: "https://github.com/Lapl6ce/Vaie" },
     },
     {
+      name: "Neighbor",
+      year: "2026",
+      blurb: "Hackathon voice companion for elderly people that listens for early signs of dementia and breathing trouble.",
+      description:
+        "Built by a team of three in 36 hours at CTRL+HACK+DEL 2.0 (York University): a voice companion that chats " +
+        "with elderly people living alone to ease isolation and screen out scam calls, while passively checking their " +
+        "speech for early signs of dementia (Wav2Vec2 fine-tuned on DementiaBank) and their breathing rate from the " +
+        "microphone. Results show on a live React dashboard.",
+      tags: ["Python", "Flask", "PyTorch", "Whisper", "React"],
+      flow: ["Microphone", "Whisper + Wav2Vec2 on Flask", "React dashboard"],
+      links: { code: "https://github.com/razoring/Neighor-Hackathon-Project" },
+    },
+    {
       name: "WISE: Weather Information System for the Elderly",
       year: "2024",
       blurb: "Sensor system showing temperature, humidity, pollution, wind and light on an LCD.",
@@ -261,6 +316,7 @@ export const SITE: Site = {
       flow: ["Temperature, humidity, pollution, wind & light sensors", "LCD display"],
       links: {},
     },
+    // TODO(owner): keep or cut — no link or image to show
     {
       name: "Physics Extended Essay",
       year: "2024",
@@ -299,7 +355,10 @@ export const SITE: Site = {
       points: ["Selected among 115+ students nationwide; mentored by Harvard students on a financial-literacy outreach project."],
     },
   ],
+  // TODO(owner): keep or cut — no link or image to show
   also:
     "Hosted the closing ceremony of a school event with a celebrity chief guest; Tata Mumbai Marathon 10 km finisher; " +
     "won a national online debate program final.",
 };
+
+export const SITE: Site = DEMO_ACTIVE ? withDemo(DRAFT) : DRAFT;

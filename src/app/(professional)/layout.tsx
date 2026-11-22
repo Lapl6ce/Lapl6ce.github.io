@@ -13,7 +13,7 @@ export const metadata: Metadata = {
   openGraph: { title: SITE.name, description: SITE.summary, type: "profile" },
 };
 
-export const viewport: Viewport = { colorScheme: "dark", themeColor: "#12110e" };
+export const viewport: Viewport = { colorScheme: "dark", themeColor: "#070b10" };
 
 // The professional site and fun mode are separate root layouts (see also
 // play/layout.tsx), so each loads only its own fonts and global CSS and the two

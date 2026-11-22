@@ -86,12 +86,15 @@ let noiseBuf: AudioBuffer | null = null;
 let enabled: boolean | null = null;
 const listeners = new Set<(on: boolean) => void>();
 
-export function isSoundOn(): boolean {
+/** Saved on/off setting. `defaultOn` applies only when nothing is saved, and the
+ *  first caller's default sticks for the rest of the page's life. */
+export function isSoundOn(defaultOn = true): boolean {
   if (enabled === null) {
     try {
-      enabled = localStorage.getItem(KEY) !== "0";
+      const saved = localStorage.getItem(KEY);
+      enabled = saved === null ? defaultOn : saved !== "0";
     } catch {
-      enabled = true;
+      enabled = defaultOn;
     }
   }
   return enabled;

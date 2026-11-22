@@ -1,8 +1,8 @@
 "use client";
 
 /* Fun mode: a handheld-console cross menu. Categories run left to right, each
-   with a vertical list of items; ← → switch category, ↑ ↓ pick, Enter opens,
-   Esc/Backspace goes back. Mouse wheel and touch swipes map to the same moves.
+   with a vertical list of items; ← → (A D) switch category, ↑ ↓ (W S) pick,
+   Enter opens, Esc/Backspace goes back. Mouse wheel and touch swipes map to the same moves.
    Categories and items are defined in `cats`. */
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
@@ -14,7 +14,7 @@ import Wave from "./Wave";
 import Backdrop from "./Backdrop";
 import { Icon, type IconName } from "./icons";
 import { duck, isMusicOn, onMusicChange, setMusicOn, start as startMusic, stop as stopMusic } from "./bgm";
-import { BOOKMARKS } from "./config";
+import { BOOKMARKS, BOOT_TITLE } from "./config";
 import { AUTO, hexToHueSat, nextTheme, resolveTheme, store, themeLabel } from "./themes";
 import { AboutPanel, ContactPanel, EducationPanel, JobPanel, ProjectPanel, SkillsPanel, SystemPanel, Thumb } from "./parts";
 
@@ -66,6 +66,9 @@ const GOTO: Record<string, [string, string?, boolean?]> = {
 
 // On mousedown: keep focus on the stage, which owns keyboard navigation, instead
 // of letting the clicked button take it.
+// WASD mirrors the arrow keys everywhere, including inside panels.
+const WASD: Record<string, string> = { w: "ArrowUp", a: "ArrowLeft", s: "ArrowDown", d: "ArrowRight" };
+
 const noFocus = (e: React.MouseEvent) => e.preventDefault();
 
 export default function Xmb() {
@@ -249,14 +252,10 @@ export default function Xmb() {
     setMonth(new Date().getMonth());
     setCat(Math.max(0, cats.findIndex((c) => c.id === "profile")));
 
-    // the boot screen plays once per browser session
-    let seen = false;
-    try {
-      seen = sessionStorage.getItem("xmb.booted") === "1";
-      sessionStorage.setItem("xmb.booted", "1");
-    } catch { /* storage blocked: show it every time */ }
+    // The start screen plays on every visit (any key or click skips it);
+    // reduced-motion users go straight to the menu.
     let bootTimer: ReturnType<typeof setTimeout> | undefined;
-    if (seen || matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches) {
       setBooting(false);
       setIntro(false);
     } else {
@@ -346,7 +345,7 @@ export default function Xmb() {
         return;
       }
       if (e.metaKey || e.ctrlKey || e.altKey) return;
-      const k = e.key;
+      const k = WASD[e.key.toLowerCase()] ?? e.key;
 
       if (panel) {
         if (k === "Escape" || k === "Backspace" || k === "ArrowLeft") closePanel();
@@ -572,11 +571,11 @@ export default function Xmb() {
         {panel ? (
           <>
             <Hint keys={["Esc"]} mouse="click outside" touch="Tap outside" label="Back" onClick={closePanel} />
-            <Hint keys={["↑", "↓"]} mouse="scroll" touch="Swipe" label="Scroll" />
+            <Hint keys={["W", "S"]} mouse="scroll" touch="Swipe" label="Scroll" />
           </>
         ) : (
           <>
-            <Hint keys={["←", "↑", "↓", "→"]} mouse="scroll" touch="Swipe" label="Navigate" />
+            <Hint keys={["W", "A", "S", "D"]} mouse="arrows / scroll" touch="Swipe" label="Navigate" />
             <Hint keys={["Enter"]} mouse="click" touch="Tap" label="Open" onClick={() => activate(cat, selOf(cat))} />
           </>
         )}
@@ -587,7 +586,7 @@ export default function Xmb() {
 
       <div className={"boot" + (booting ? "" : " is-done")} aria-hidden="true" onClick={skipBoot}>
         <div className="boot-inner">
-          <p className="boot-name">{SITE.name}</p>
+          <p className="boot-name">{BOOT_TITLE}</p>
           <p className="boot-sub">portfolio</p>
         </div>
       </div>

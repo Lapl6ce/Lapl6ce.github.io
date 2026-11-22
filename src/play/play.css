@@ -626,7 +626,7 @@ a { color: inherit; }
 }
 .preview-name { padding: 6px 10px; font-size: 0.85rem; }
 
-/* returning visitors skip the boot screen entirely */
+/* reduced motion: no start screen at all */
 .xmb-root.no-intro .boot { display: none; }
 
 /* how-it-works chain inside a project panel */

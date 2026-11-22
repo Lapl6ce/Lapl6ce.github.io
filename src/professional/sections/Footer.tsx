@@ -6,7 +6,7 @@ export default function Footer() {
     <footer className="site-footer">
       <p>
         © {new Date().getFullYear()} {SITE.name} · <a href={ROUTES.play}>try fun mode</a>, a console-style version of this
-        site · press <kbd>`</kbd> for a terminal
+        site
       </p>
       <p className="eof" aria-hidden="true">
         -- EOF --

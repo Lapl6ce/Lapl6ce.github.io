@@ -1,8 +1,12 @@
 /* The picture for a featured project. Order of preference:
-   live site → screenshot → how-it-works diagram → generated cover. */
+   live site → screenshot → the `imageNeeded` file (or a box asking for it) →
+   how-it-works diagram → generated cover. Demo mode skips the box. */
 
 import { domain, hueOf, liveSites, type Project } from "@/content/site";
+import { DEMO_ACTIVE } from "@/content/demo";
+import { findImage } from "../assets";
 import BrowserFrame from "./BrowserFrame";
+import ImageNeeded from "./ImageNeeded";
 
 const RAMP = " .:-=+*#"; // light to dense
 
@@ -54,5 +58,11 @@ export default function ProjectMedia({ p }: { p: Project }) {
   const [site] = liveSites(p);
   if (site) return <BrowserFrame name={site.name} label={domain(site.url)} image={site.image} href={site.url} />;
   if (p.preview) return <BrowserFrame name={p.name} label={p.name} image={p.preview} href={p.links.demo || p.links.code} />;
+  if (p.imageNeeded) {
+    const href = p.links.demo || p.links.code;
+    const found = findImage(p.imageNeeded);
+    if (found) return <BrowserFrame name={p.name} label={p.name} image={found} href={href} />;
+    if (!DEMO_ACTIVE) return <ImageNeeded path={p.imageNeeded} />;
+  }
   return <Cover p={p} />;
 }

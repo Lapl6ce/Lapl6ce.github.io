@@ -1,5 +1,8 @@
 // Content only fun mode shows; shared content is in src/content/site.ts.
 
+/** title on the start screen */
+export const BOOT_TITLE = "Laplace";
+
 /** extra links in the "Network" category, listed after the profile links */
 export const BOOKMARKS: { name: string; url: string; note?: string }[] = [];
 

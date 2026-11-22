@@ -1,11 +1,12 @@
 import { SITE, LINK_LABELS, domain, profileLinks } from "@/content/site";
 import { external } from "@/shared/links";
+import OwnerText from "../owner/OwnerText";
 
 export default function Contact() {
   return (
     <section className="section" id="contact" aria-labelledby="contact-h">
       <h2 id="contact-h">Contact</h2>
-      <p className="prose">{SITE.contactNote}</p>
+      <OwnerText className="prose" value={SITE.contactNote} />
       <dl className="leaders contact-box">
         <dt>Email</dt>
         <dd>
