@@ -1,8 +1,7 @@
 "use client";
 
-/* Faint field of drifting stars behind the classic page, with a gentle
-   cursor parallax and the occasional shooting star.
-   Reduced-motion users get a static frame. */
+/* Background canvas: faint drifting ASCII stars with cursor parallax and an
+   occasional shooting star. With reduced motion it draws one static frame. */
 
 import { useEffect, useRef } from "react";
 
@@ -14,7 +13,11 @@ const TWINKLE_SPEED = 0.0012;
 const METEOR_MIN_GAP = 9000;
 const METEOR_MAX_GAP = 24000;
 
-type Star = { x: number; y: number; depth: number; base: number; phase: number };
+const GLYPHS = [".", ".", ".", "'", "+", "*"]; // weighted toward plain dots
+const COLOR = "#e8e2d0"; // --text in professional.css
+const TRAIL = "232, 163, 61"; // --accent as rgb, for the meteor gradient
+
+type Star = { x: number; y: number; depth: number; base: number; phase: number; glyph: string };
 type Meteor = { x: number; y: number; vx: number; vy: number; life: number };
 
 export default function Starfield() {
@@ -35,20 +38,28 @@ export default function Starfield() {
     function drawStatic() {
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, w, h);
-      ctx.fillStyle = "#cdd6e4";
-      for (const s of stars) {
-        ctx.globalAlpha = s.base;
-        ctx.fillRect(s.x, s.y, s.depth * 1.6, s.depth * 1.6);
-      }
+      ctx.fillStyle = COLOR;
+      for (const s of stars) drawStar(s, s.x, s.y, s.base);
       ctx.globalAlpha = 1;
     }
 
+    // Assigning ctx.font re-parses the font string, so it's only set when the
+    // size changes. Resizing the canvas resets the context, hence the reset there.
+    let font = "";
+    function drawStar(s: Star, x: number, y: number, alpha: number) {
+      const next = `${Math.round(8 + s.depth * 6)}px ui-monospace, monospace`; // nearer stars are bigger
+      if (next !== font) ctx.font = font = next;
+      ctx.globalAlpha = alpha;
+      ctx.fillText(s.glyph, x, y);
+    }
+
     function resize() {
-      dpr = Math.min(devicePixelRatio || 1, 2);
+      dpr = Math.min(devicePixelRatio || 1, 2); // sharper on high-DPI, capped to bound canvas memory
       w = innerWidth;
       h = innerHeight;
       canvas.width = w * dpr;
       canvas.height = h * dpr;
+      font = "";
       const count = Math.min(Math.floor((w * h) / DENSITY), MAX_STARS);
       stars = Array.from({ length: count }, () => ({
         x: Math.random() * w,
@@ -56,25 +67,25 @@ export default function Starfield() {
         depth: 0.3 + Math.random() * 0.7,
         base: 0.08 + Math.random() * 0.3,
         phase: Math.random() * Math.PI * 2,
-      }));
+        glyph: GLYPHS[Math.floor(Math.random() * GLYPHS.length)],
+      })).sort((a, b) => a.depth - b.depth); // grouped by size, so the font changes a few times per frame, not per star
       if (reduceMotion) drawStatic();
     }
 
     function tick(now: number) {
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, w, h);
+      // ease toward the cursor offset; deeper stars (higher depth) move further
       mx += (targetMx - mx) * 0.04;
       my += (targetMy - my) * 0.04;
 
-      ctx.fillStyle = "#cdd6e4";
+      ctx.fillStyle = COLOR;
       for (const s of stars) {
         s.x += DRIFT * s.depth;
         s.y += DRIFT * 0.6 * s.depth;
         if (s.x > w + 2) s.x = -2;
         if (s.y > h + 2) s.y = -2;
-        ctx.globalAlpha = s.base * (0.75 + 0.25 * Math.sin(now * TWINKLE_SPEED * s.depth + s.phase));
-        const size = s.depth * 1.6;
-        ctx.fillRect(s.x + mx * s.depth, s.y + my * s.depth, size, size);
+        drawStar(s, s.x + mx * s.depth, s.y + my * s.depth, s.base * (0.75 + 0.25 * Math.sin(now * TWINKLE_SPEED * s.depth + s.phase)));
       }
 
       if (!meteor && now > nextMeteorAt) {
@@ -92,8 +103,8 @@ export default function Starfield() {
           const tailX = meteor.x - meteor.vx * 9;
           const tailY = meteor.y - meteor.vy * 9;
           const grad = ctx.createLinearGradient(meteor.x, meteor.y, tailX, tailY);
-          grad.addColorStop(0, `rgba(205, 214, 228, ${0.6 * meteor.life})`);
-          grad.addColorStop(1, "rgba(205, 214, 228, 0)");
+          grad.addColorStop(0, `rgba(${TRAIL}, ${0.6 * meteor.life})`);
+          grad.addColorStop(1, `rgba(${TRAIL}, 0)`);
           ctx.globalAlpha = 1;
           ctx.strokeStyle = grad;
           ctx.lineWidth = 1.2;

@@ -1,7 +1,7 @@
 "use client";
 
-/* Animated XMB background: a vertical color gradient with soft,
-   glowing ribbons drifting across the screen. */
+/* Animated menu background: a vertical gradient in the theme colour with
+   translucent ribbons drifting across it. */
 
 import { useEffect, useRef } from "react";
 
@@ -18,7 +18,8 @@ export default function Wave({ hue, sat, enabled }: Props) {
   const props = useRef({ hue, sat });
   const api = useRef<{ redraw: () => void; setRunning: (on: boolean) => void } | null>(null);
 
-  // one-time setup: canvas sizing + draw loop
+  // The canvas and its draw loop are set up once. Later prop changes reach the
+  // loop through refs (props, api), so a theme switch doesn't restart it.
   useEffect(() => {
     const canvas = canvasRef.current!;
     const ctx = canvas.getContext("2d")!;
@@ -26,26 +27,33 @@ export default function Wave({ hue, sat, enabled }: Props) {
     let w = 0, h = 0, dpr = 1;
     let running = false;
     let raf = 0;
-    let t = 12000; // time of the last drawn frame (used for static frames)
+    // Time of the last drawn frame; static redraws (paused, reduced motion) reuse it.
+    // Starting at 12 s rather than 0 means the first static frame isn't the t=0 pose.
+    let t = 12000;
 
     function draw(time: number) {
       const { hue: H, sat: S } = props.current;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-      const g = ctx.createLinearGradient(0, 0, 0, h);
-      g.addColorStop(0, `hsl(${H}, ${S * 0.7}%, 42%)`);
-      g.addColorStop(0.5, `hsl(${H}, ${S * 0.75}%, 22%)`);
-      g.addColorStop(1, `hsl(${H}, ${S * 0.8}%, 8%)`);
-      ctx.fillStyle = g;
+      const sky = ctx.createLinearGradient(0, 0, 0, h);
+      sky.addColorStop(0, `hsl(${H}, ${S * 0.7}%, 42%)`);
+      sky.addColorStop(0.5, `hsl(${H}, ${S * 0.75}%, 22%)`);
+      sky.addColorStop(1, `hsl(${H}, ${S * 0.8}%, 8%)`);
+      ctx.fillStyle = sky;
       ctx.fillRect(0, 0, w, h);
 
-      const r = ctx.createRadialGradient(w * 0.25, h * 0.1, 0, w * 0.25, h * 0.1, Math.max(w, h) * 0.8);
-      r.addColorStop(0, "rgba(255,255,255,0.10)");
-      r.addColorStop(1, "rgba(255,255,255,0)");
-      ctx.fillStyle = r;
+      const glow = ctx.createRadialGradient(w * 0.25, h * 0.1, 0, w * 0.25, h * 0.1, Math.max(w, h) * 0.8);
+      glow.addColorStop(0, "rgba(255,255,255,0.10)");
+      glow.addColorStop(1, "rgba(255,255,255,0)");
+      ctx.fillStyle = glow;
       ctx.fillRect(0, 0, w, h);
 
-      const step = Math.max(6, Math.round(w / 160));
+      // Each ribbon is a band between two traced edges. All values are fractions
+      // of the screen: `base` is the band's height on screen, `amp` its wave
+      // height, `len` how many waves fit across, `thick` its width.
+      // Two sines moving in opposite directions at different speeds give the top
+      // edge an irregular, non-repeating motion; a third sine varies the width.
+      const step = Math.max(6, Math.round(w / 160)); // ~160 samples across, whatever the width
       for (const rb of RIBBONS) {
         const top: [number, number][] = [];
         const bottom: [number, number][] = [];
@@ -61,6 +69,7 @@ export default function Wave({ hue, sat, enabled }: Props) {
           bottom.push([x, y + thick]);
         }
 
+        // fill: along the top edge, then back along the bottom edge
         ctx.beginPath();
         top.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)));
         for (let i = bottom.length - 1; i >= 0; i--) ctx.lineTo(bottom[i][0], bottom[i][1]);
@@ -71,6 +80,7 @@ export default function Wave({ hue, sat, enabled }: Props) {
         ctx.fillStyle = fill;
         ctx.fill();
 
+        // a bright line on the top edge and a fainter one on the bottom
         ctx.lineWidth = 1.2;
         ctx.strokeStyle = `rgba(255,255,255,${rb.alpha * 3.2})`;
         ctx.beginPath();
@@ -93,7 +103,7 @@ export default function Wave({ hue, sat, enabled }: Props) {
     }
 
     function resize() {
-      dpr = Math.min(devicePixelRatio || 1, 1.5);
+      dpr = Math.min(devicePixelRatio || 1, 1.5); // full-screen redraw every frame: cap resolution for speed
       w = innerWidth;
       h = innerHeight;
       canvas.width = Math.round(w * dpr);
@@ -131,7 +141,6 @@ export default function Wave({ hue, sat, enabled }: Props) {
     };
   }, []);
 
-  // react to prop changes
   useEffect(() => {
     props.current = { hue, sat };
     api.current?.redraw();

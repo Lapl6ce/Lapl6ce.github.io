@@ -1,13 +1,34 @@
-/* The preview at the top of each project card. Order of preference:
+/* The picture for a featured project. Order of preference:
    live site → screenshot → how-it-works diagram → generated cover. */
 
-import { hueOf, liveSites, type Project } from "@/content/site";
-import Preview from "./Preview";
+import { domain, hueOf, liveSites, type Project } from "@/content/site";
+import BrowserFrame from "./BrowserFrame";
+
+const RAMP = " .:-=+*#"; // light to dense
+
+/** Deterministic ASCII texture for a cover: overlapping sine waves sampled on a
+ *  character grid, seeded by the project name so every cover differs but the
+ *  server and client render the same text. */
+function asciiField(seed: number, cols = 100, rows = 34) {
+  const a = 0.08 + (seed % 7) * 0.015;
+  const b = 0.18 + (seed % 5) * 0.03;
+  const phase = seed / 57;
+  let out = "";
+  for (let y = 0; y < rows; y++) {
+    for (let x = 0; x < cols; x++) {
+      // three waves in different directions, summed to roughly -3..3
+      const v = Math.sin(x * a + phase) + Math.sin(y * b - phase) + Math.sin((x + y * 2) * a * 0.7 + phase * 2);
+      out += RAMP[Math.min(RAMP.length - 1, Math.max(0, Math.floor(((v + 3) / 6) * RAMP.length)))];
+    }
+    out += "\n";
+  }
+  return out;
+}
 
 function Cover({ p }: { p: Project }) {
-  const style = { "--cover-h": hueOf(p.name) } as React.CSSProperties;
   return (
-    <div className="cover" style={style} aria-hidden="true">
+    <div className="cover" aria-hidden="true">
+      <pre className="cover-field">{asciiField(hueOf(p.name))}</pre>
       {p.flow?.length ? (
         <ol className="flow">
           {p.flow.map((step, i) => (
@@ -22,7 +43,7 @@ function Cover({ p }: { p: Project }) {
       ) : (
         <div className="cover-title">
           <span className="cover-name">{p.name}</span>
-          {p.tags.length > 0 && <span className="cover-tags">{p.tags.join("  ·  ")}</span>}
+          {p.tags.length > 0 && <span className="cover-tags">{p.tags.join(" / ")}</span>}
         </div>
       )}
     </div>
@@ -30,32 +51,8 @@ function Cover({ p }: { p: Project }) {
 }
 
 export default function ProjectMedia({ p }: { p: Project }) {
-  const sites = liveSites(p);
-  if (sites.length) return <Preview site={sites[0]} compact />;
-
-  if (p.preview) {
-    const href = p.links.demo || p.links.code;
-    const inner = (
-      <>
-        <div className="preview-bar" aria-hidden="true">
-          <span className="preview-dots"><i /><i /><i /></span>
-          <span className="preview-url">{p.name}</span>
-          {href && <span className="preview-open">↗</span>}
-        </div>
-        <div className="preview-shot">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={p.preview} alt={`Screenshot of ${p.name}`} loading="lazy" />
-        </div>
-      </>
-    );
-    return href ? (
-      <a className="preview" href={href} target="_blank" rel="noopener" aria-label={`${p.name} (opens in a new tab)`}>
-        {inner}
-      </a>
-    ) : (
-      <div className="preview is-static">{inner}</div>
-    );
-  }
-
+  const [site] = liveSites(p);
+  if (site) return <BrowserFrame name={site.name} label={domain(site.url)} image={site.image} href={site.url} />;
+  if (p.preview) return <BrowserFrame name={p.name} label={p.name} image={p.preview} href={p.links.demo || p.links.code} />;
   return <Cover p={p} />;
 }

@@ -2,7 +2,7 @@
   "name": "portfolio",
   "version": "4.0.0",
   "private": true,
-  "description": "Personal site with two modes: classic (professional) and XMB (experimental). Next.js + React.",
+  "description": "Personal site with two modes: professional (/) and fun mode (/play). Next.js + React.",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

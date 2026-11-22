@@ -1,23 +1,13 @@
-/* ============================================================
-   site.ts — EVERYTHING about you lives here.
-   Both versions of the site (classic at / and XMB at /play)
-   render from this file, so you only edit your info once.
+/* Portfolio content, rendered by both the professional site and fun mode.
+   Data only fun mode uses lives in src/play/config.ts.
 
-   PROJECT PREVIEWS
-   Every project card shows a preview, picked in this order:
-     1. a live website in `sites` (clickable browser-window card)
-     2. `preview`: a screenshot in public/assets/previews/
-     3. `flow`: a short how-it-works diagram, e.g. ["Shopify", "Middleware", "WordPress"]
-     4. otherwise a generated cover with the name and tech
-
-   WEBSITE PREVIEWS
-   Any project can list `sites`. Each one renders
-   as a clickable browser-window preview instead of a plain link:
-     { name: "Label", url: "https://...", image: "/assets/previews/x.png" }
-   - Entries with an empty url are hidden.
-   - `image` is a screenshot in public/assets/previews (16:10 looks best).
-     Without one, a styled placeholder showing the domain is used.
-   ============================================================ */
+   Adding a project: append to `projects`. The card shows the first available of:
+     1. `sites`: a live site as a clickable browser-window screenshot
+        ({ name, url, image }; image in public/assets/previews/, 16:10; entries without a url are hidden)
+     2. `preview`: a screenshot of the project itself
+     3. `flow`: steps for a small how-it-works diagram, e.g. ["Shopify", "Middleware", "WordPress"]
+     4. a generated cover from the name and tags
+   `featured: true` sorts a project first. */
 
 export type SitePreview = { name: string; url: string; image?: string };
 
@@ -45,11 +35,10 @@ export type Project = {
   tags: string[];
   links: Partial<Record<"code" | "demo", string>>;
   featured?: boolean;
-  thumb?: string; // optional image for the XMB "game card"
   sites?: SitePreview[];
   /** screenshot of the project itself, e.g. "/assets/previews/crm-base.jpg" */
   preview?: string;
-  /** no screenshot? describe how it works and the card draws a little diagram */
+  /** steps for a how-it-works diagram, used when there is no screenshot */
   flow?: string[];
 };
 
@@ -64,6 +53,8 @@ export type Site = {
   resume?: string;
   links: Partial<Record<"github" | "linkedin" | "upwork", string>>;
   summary: string;
+  /** availability line shown above the contact details */
+  contactNote: string;
   about: string[];
   experience: TimelineEntry[];
   education: Education[];
@@ -71,13 +62,15 @@ export type Site = {
   skills: { group: string; items: string[] }[];
   leadership: TimelineEntry[];
   also?: string;
-  bookmarks: { name: string; url: string; note?: string }[];
-  changelog: { version: string; date: string; note: string }[];
 };
 
 export const LINK_LABELS: Record<string, string> = { github: "GitHub", linkedin: "LinkedIn", upwork: "Upwork" };
 
+/** "https://www.example.com/" → "example.com" */
 export const domain = (url: string) => url.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "");
+/** profile links that are filled in, as [key, url] pairs */
+export const profileLinks = () => Object.entries(SITE.links).filter((e): e is [string, string] => !!e[1]);
+/** the entry's `sites` that have a url */
 export const liveSites = (item: { sites?: SitePreview[] }) => (item.sites || []).filter((s) => s.url);
 /** stable hue (0-359) per name, used for generated covers */
 export const hueOf = (name: string) => {
@@ -88,7 +81,6 @@ export const hueOf = (name: string) => {
 export const featuredFirst = (ps: Project[]) => [...ps].sort((a, b) => Number(!!b.featured) - Number(!!a.featured));
 
 export const SITE: Site = {
-  // ---------- basics ----------
   name: "Ebrahim Daginawala",
   handle: "ebrahim",
   role: "Computer Science Student & Freelance Full-Stack Developer",
@@ -103,12 +95,13 @@ export const SITE: Site = {
     upwork: "https://www.upwork.com/freelancers/~01ddd67c430e08843d",
   },
 
-  // shown at the top of the classic site
   summary:
     "Second-year Computer Science student at York University and freelance full-stack developer. " +
     "I build web applications, API integrations and automation that help businesses run more reliably.",
 
-  // longer bio, one string per paragraph
+  contactNote: "Open to software development internships and freelance work. Email is the fastest way to reach me.",
+
+  // one string per paragraph
   about: [
     "I'm a second-year Computer Science student at York University in Toronto, and I freelance as a " +
       "full-stack developer. I work mostly in Java, Python and TypeScript, with React, Node.js and Next.js " +
@@ -121,7 +114,7 @@ export const SITE: Site = {
       "Tata Mumbai Marathon 10 km, and won a national online debate final.",
   ],
 
-  // ---------- experience (most recent first) ----------
+  // most recent first
   experience: [
     {
       title: "Web & App Developer (Freelance)",
@@ -146,7 +139,6 @@ export const SITE: Site = {
     },
   ],
 
-  // ---------- education ----------
   education: [
     {
       school: "York University",
@@ -169,9 +161,6 @@ export const SITE: Site = {
     },
   ],
 
-  // ---------- projects ----------
-  // links: delete any you don't have. featured: true shows it first.
-  // thumb: optional image for the XMB "game card". sites: live previews (see top).
   projects: [
     {
       name: "Dagina Designs",
@@ -209,6 +198,7 @@ export const SITE: Site = {
       flow: ["Shopify store", "Webhook middleware on Render", "WordPress + ARMember"],
       featured: true,
     },
+    // thrift_feed: add a screenshot as `preview` and, once deployed, a `sites` entry.
     {
       name: "thrift_feed",
       year: "",
@@ -218,10 +208,8 @@ export const SITE: Site = {
         "persistent wishlist and cart, backed by a Neon Postgres database through Drizzle ORM.",
       tags: ["Next.js 15", "Drizzle ORM", "Neon Postgres"],
       links: {},
-      preview: "", // TODO: screenshot → "/assets/previews/thrift-feed.jpg"
       flow: ["Next.js 15 storefront", "Drizzle ORM", "Neon Postgres"],
       featured: true,
-      sites: [{ name: "thrift_feed", url: "", image: "" }],              // TODO: url if deployed
     },
     {
       name: "CRM Base",
@@ -285,14 +273,12 @@ export const SITE: Site = {
     },
   ],
 
-  // ---------- skills ----------
   skills: [
     { group: "Languages", items: ["Python", "JavaScript", "TypeScript", "Java", "HTML/CSS", "Rust (learning)"] },
     { group: "Frameworks & Tools", items: ["React", "Next.js", "Node.js/Express", "WordPress", "Shopify (custom apps)", "Drizzle ORM", "Postgres", "Git/GitHub", "Zapier", "Google Sheets"] },
     { group: "Concepts", items: ["REST API integration", "Webhooks", "Workflow automation", "Full-stack web development"] },
   ],
 
-  // ---------- leadership & activities ----------
   leadership: [
     {
       title: "Founder, STEAM Club",
@@ -316,17 +302,4 @@ export const SITE: Site = {
   also:
     "Hosted the closing ceremony of a school event with a celebrity chief guest; Tata Mumbai Marathon 10 km finisher; " +
     "won a national online debate program final.",
-
-  // ---------- bookmarks (XMB "Network" tab, after your profiles) ----------
-  bookmarks: [],
-
-  // ---------- changelog (XMB "System Information") ----------
-  changelog: [
-    { version: "4.1", date: "2026-11", note: "Fun mode: project backdrops, ambient music, new menu sounds." },
-    { version: "4.0", date: "2026-11", note: "Rebuilt in React with Next.js." },
-    { version: "3.1", date: "2026-11", note: "Filled in from résumé; added website previews." },
-    { version: "3.0", date: "2026-11", note: "Merged both sites; added XMB mode." },
-    { version: "2.0", date: "2026-09", note: "Interactive room experiment." },
-    { version: "1.0", date: "2026-07", note: "First single-page version." },
-  ],
 };

@@ -1,16 +1,8 @@
-/* ============================================================
-   sfx.ts — tiny synthesized sound effects (Web Audio, no files).
-   Shared by both modes; the on/off setting is shared too.
-
-   The XMB set aims for a handheld-console menu feel: soft,
-   short "ticks" made of filtered noise plus a quiet tone,
-   glassy chimes for confirm, and an airy swell at boot.
-   Everything runs through a small shared reverb.
-
-   Browsers only allow audio after the visitor has clicked or
-   pressed a key, so the first sound always comes from a gesture.
-   To tweak a sound, edit its entry in SOUNDS.
-   ============================================================ */
+/* Sound effects synthesized with Web Audio; no audio files. Both modes share
+   one on/off setting. Each sound is a list of notes: band-passed noise bursts
+   for "ticks" plus quiet sine tones, all sent through one shared reverb.
+   Browsers keep an AudioContext suspended until a click or key press, so
+   play() is only called from input handlers. */
 
 type Note = {
   freq?: number;     // tone: start frequency (Hz). Omit with `noise`.
@@ -26,7 +18,7 @@ type Note = {
 };
 
 const SOUNDS = {
-  // XMB: cursor up/down, a soft dry tick
+  // fun mode, cursor up/down: a soft dry tick
   move: [
     { noise: 4200, q: 1.6, dur: 0.028, gain: 0.09, wet: 0.08 },
     { freq: 3100, dur: 0.022, type: "sine", gain: 0.018, wet: 0.08 },
@@ -78,7 +70,7 @@ const SOUNDS = {
     { freq: 1318.5, dur: 1.6, type: "sine", gain: 0.012, attack: 0.02, delay: 1.0, wet: 0.8 },
     { freq: 1975.5, dur: 1.6, type: "sine", gain: 0.009, attack: 0.02, delay: 1.12, wet: 0.8 },
   ],
-  // classic (deliberately quiet)
+  // professional site link clicks (deliberately quiet)
   click: [{ freq: 1400, to: 1100, dur: 0.03, type: "sine", gain: 0.025, wet: 0 }],
   // terminal
   key: [{ freq: 2400, dur: 0.012, type: "square", gain: 0.008, wet: 0 }],
@@ -110,7 +102,7 @@ export function setSoundOn(on: boolean) {
   try {
     localStorage.setItem(KEY, on ? "1" : "0");
   } catch {
-    /* ignore */
+    /* storage blocked (private mode): the setting lasts for this page only */
   }
   listeners.forEach((fn) => fn(on));
 }
@@ -121,7 +113,7 @@ export function onSoundChange(fn: (on: boolean) => void) {
   return () => listeners.delete(fn);
 }
 
-/** A generated reverb impulse: decaying stereo noise. Also used by the music. */
+/** Reverb impulse response: stereo noise with a power-curve decay. Also used by bgm.ts. */
 export function makeImpulse(ac: BaseAudioContext, seconds: number, decay: number) {
   const len = Math.floor(ac.sampleRate * seconds);
   const buf = ac.createBuffer(2, len, ac.sampleRate);
@@ -138,6 +130,7 @@ function audio(): AudioContext | null {
     const AC = window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
     if (!AC) return null;
     ctx = new AC();
+    // every note goes to `dry`, and optionally a share of it to the reverb
     dry = ctx.createGain();
     dry.connect(ctx.destination);
     reverb = ctx.createConvolver();
@@ -147,52 +140,56 @@ function audio(): AudioContext | null {
     const d = noiseBuf.getChannelData(0);
     for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
   }
+  // a context created before the first gesture starts suspended
   if (ctx.state === "suspended") void ctx.resume();
   return ctx;
 }
 
+/** Plays a named sound. `force` plays it even while sound is off (used by the toggle that turns it on). */
 export function play(name: SoundName, { force = false } = {}) {
   if (!force && !isSoundOn()) return;
   const ac = audio();
   if (!ac) return;
   const now = ac.currentTime;
-  for (const n of SOUNDS[name] as Note[]) {
-    const t = now + (n.delay ?? 0);
-    const attack = n.attack ?? 0.004;
+  for (const note of SOUNDS[name] as Note[]) {
+    const t = now + (note.delay ?? 0);
+    const attack = note.attack ?? 0.004;
     const amp = ac.createGain();
-    // quick (or soft) attack, smooth exponential release (avoids clicks)
+    // Exponential envelope: sounds natural and avoids clicks. Exponential ramps
+    // can't reach 0, hence the 0.0001 floor at both ends.
     amp.gain.setValueAtTime(0.0001, t);
-    amp.gain.exponentialRampToValueAtTime(n.gain ?? 0.04, t + attack);
-    amp.gain.exponentialRampToValueAtTime(0.0001, t + Math.max(n.dur, attack + 0.01));
+    amp.gain.exponentialRampToValueAtTime(note.gain ?? 0.04, t + attack);
+    amp.gain.exponentialRampToValueAtTime(0.0001, t + Math.max(note.dur, attack + 0.01));
 
     let src: AudioScheduledSourceNode;
-    if (n.noise) {
+    if (note.noise) {
+      // one second of white noise, looped and band-passed to give the tick its pitch
       const ns = ac.createBufferSource();
       ns.buffer = noiseBuf;
       ns.loop = true;
       const bp = ac.createBiquadFilter();
       bp.type = "bandpass";
-      bp.frequency.value = n.noise;
-      bp.Q.value = n.q ?? 1.2;
+      bp.frequency.value = note.noise;
+      bp.Q.value = note.q ?? 1.2;
       ns.connect(bp).connect(amp);
       src = ns;
     } else {
       const osc = ac.createOscillator();
-      osc.type = n.type ?? "sine";
-      osc.frequency.setValueAtTime(n.freq ?? 1000, t);
-      if (n.to) osc.frequency.exponentialRampToValueAtTime(n.to, t + n.dur);
+      osc.type = note.type ?? "sine";
+      osc.frequency.setValueAtTime(note.freq ?? 1000, t);
+      if (note.to) osc.frequency.exponentialRampToValueAtTime(note.to, t + note.dur);
       osc.connect(amp);
       src = osc;
     }
 
     amp.connect(dry!);
-    const wet = n.wet ?? 0.25;
+    const wet = note.wet ?? 0.25;
     if (wet > 0) {
       const send = ac.createGain();
       send.gain.value = wet;
       amp.connect(send).connect(reverb!);
     }
     src.start(t);
-    src.stop(t + Math.max(n.dur, attack) + 0.05);
+    src.stop(t + Math.max(note.dur, attack) + 0.05); // a little past the release so the tail isn't cut
   }
 }

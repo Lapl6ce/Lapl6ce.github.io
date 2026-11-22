@@ -1,21 +1,20 @@
 "use client";
 
-/* ============================================================
-   The experimental "handheld console menu" version.
-     ← → switch category · ↑ ↓ pick an item
-     Enter opens it · Esc / Backspace goes back
-   Mouse (click, wheel) and touch (swipe, tap) work too.
-   To add a category, add an entry to `cats` below.
-   ============================================================ */
+/* Fun mode: a handheld-console cross menu. Categories run left to right, each
+   with a vertical list of items; ← → switch category, ↑ ↓ pick, Enter opens,
+   Esc/Backspace goes back. Mouse wheel and touch swipes map to the same moves.
+   Categories and items are defined in `cats`. */
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { SITE, domain, featuredFirst, type Project } from "@/content/site";
-import Terminal, { isTerminalOpen, openTerminal } from "@/components/Terminal";
+import Terminal, { isTerminalOpen, openTerminal } from "@/shared/Terminal";
+import { isSoundOn, play, setSoundOn } from "@/shared/sfx";
+import { ROUTES } from "@/shared/links";
 import Wave from "./Wave";
 import Backdrop from "./Backdrop";
 import { Icon, type IconName } from "./icons";
-import { isSoundOn, play, setSoundOn } from "@/lib/sfx";
-import { duck, isMusicOn, onMusicChange, setMusicOn, start as startMusic, stop as stopMusic } from "@/lib/bgm";
+import { duck, isMusicOn, onMusicChange, setMusicOn, start as startMusic, stop as stopMusic } from "./bgm";
+import { BOOKMARKS } from "./config";
 import { AUTO, hexToHueSat, nextTheme, resolveTheme, store, themeLabel } from "./themes";
 import { AboutPanel, ContactPanel, EducationPanel, JobPanel, ProjectPanel, SkillsPanel, SystemPanel, Thumb } from "./parts";
 
@@ -33,16 +32,26 @@ type Item = {
 
 type Cat = { id: string; label: string; icon: IconName; thumbs?: boolean; items: Item[] };
 
-type Metrics = { ax: number; cy: number; gap: number; catH: number; itemH: number; selH: number };
+/** Menu geometry in px. Items are absolutely positioned from these numbers
+ *  (see itemStyle) so moving the selection is a CSS transform transition. */
+type Metrics = {
+  ax: number; // x of the active column
+  cy: number; // y of the category row
+  gap: number; // horizontal distance between categories
+  catH: number; // height of the category icon; the selected item sits just below it
+  itemH: number; // row height of an unselected item
+  selH: number; // row height of the selected item, which is drawn larger
+};
 
 function getMetrics(): Metrics {
   const w = innerWidth, h = innerHeight;
   if (w < 640) return { ax: 22, cy: Math.round(h * 0.17), gap: 86, catH: 92, itemH: 62, selH: 78 };
   return { ax: Math.round(Math.min(w * 0.2, 300)), cy: Math.round(h * 0.2), gap: 124, catH: 112, itemH: 68, selH: 88 };
 }
+// Used for the server render, before the window size is known.
 const DEFAULT_METRICS: Metrics = { ax: 260, cy: 170, gap: 124, catH: 112, itemH: 68, selH: 88 };
 
-// terminal "go" targets → [category, item id?, open panel?]
+// Terminal commands and URL hashes that jump somewhere: [category id, item id?, open its panel?]
 const GOTO: Record<string, [string, string?, boolean?]> = {
   about: ["profile", "about", true],
   contact: ["profile", "contact", true],
@@ -55,24 +64,26 @@ const GOTO: Record<string, [string, string?, boolean?]> = {
   settings: ["settings"],
 };
 
+// On mousedown: keep focus on the stage, which owns keyboard navigation, instead
+// of letting the clicked button take it.
 const noFocus = (e: React.MouseEvent) => e.preventDefault();
 
 export default function Xmb() {
-  // ---------- settings (persisted) ----------
+  // ---------- settings (persisted; real values load on mount) ----------
   const [themeIdx, setThemeIdx] = useState(AUTO);
   const [waveOn, setWaveOn] = useState(true);
   const [soundOn, setSoundOnState] = useState(true);
   const [musicOn, setMusicOnState] = useState(true);
-  const [month, setMonth] = useState(10);
+  const [month, setMonth] = useState(10); // fixed until mount so server and client render the same theme
 
   // ---------- menu state ----------
   const [cat, setCat] = useState(1);
   const [sel, setSel] = useState<number[]>([]);
   const [panel, setPanel] = useState<{ cat: number; idx: number } | null>(null);
-  const [pulse, setPulse] = useState("");
+  const [pulse, setPulse] = useState(""); // "cat-item-timestamp" of the last toggled setting; replays its flash
   const [metrics, setMetrics] = useState<Metrics>(DEFAULT_METRICS);
   const [booting, setBooting] = useState(true);
-  const [intro, setIntro] = useState(true);
+  const [intro, setIntro] = useState(true); // false (repeat visit, reduced motion): no boot screen or slide-in
   const [clock, setClock] = useState("");
   const [battery, setBattery] = useState({ level: 1, charging: false });
   const [announce, setAnnounce] = useState("");
@@ -111,7 +122,7 @@ export default function Xmb() {
             title: "Background Music", icon: "music", sub: musicOn ? "On" : "Off",
             action: () => setMusicOn(!isMusicOn()),
           },
-          { title: "Professional Site", icon: "swap", sub: "Switch to the professional layout", href: "/" },
+          { title: "Professional Site", icon: "swap", sub: "Switch to the professional layout", href: ROUTES.professional },
           { title: "System Information", icon: "info", sub: "Version and update history", panel: () => <SystemPanel theme={themeName} /> },
         ],
       },
@@ -151,7 +162,7 @@ export default function Xmb() {
           ...(linkedin ? [{ title: "LinkedIn", icon: "user" as IconName, sub: "LinkedIn profile", href: linkedin, newTab: true }] : []),
           ...(upwork ? [{ title: "Upwork", icon: "briefcase" as IconName, sub: "Freelance profile", href: upwork, newTab: true }] : []),
           { title: "Email", icon: "mail", sub: SITE.email, href: `mailto:${SITE.email}` },
-          ...SITE.bookmarks.map((b) => ({ title: b.name, icon: "link" as IconName, sub: b.note, href: b.url, newTab: true })),
+          ...BOOKMARKS.map((b) => ({ title: b.name, icon: "link" as IconName, sub: b.note, href: b.url, newTab: true })),
         ],
       },
     ];
@@ -162,19 +173,19 @@ export default function Xmb() {
 
   // ---------- actions ----------
   const activate = useCallback((ci: number, ii: number) => {
-    const it = cats[ci]?.items[ii];
-    if (!it) return;
-    if (it.action) {
-      it.action();
+    const item = cats[ci]?.items[ii];
+    if (!item) return;
+    if (item.action) {
+      item.action();
       play("toggle", { force: true }); // audible even when this action just turned sound on
       setPulse(`${ci}-${ii}-${Date.now()}`);
-    } else if (it.panel) {
+    } else if (item.panel) {
       play("open");
       setPanel({ cat: ci, idx: ii });
-    } else if (it.href) {
+    } else if (item.href) {
       play("select");
-      if (it.newTab) window.open(it.href, "_blank", "noopener");
-      else location.href = it.href;
+      if (item.newTab) window.open(item.href, "_blank", "noopener");
+      else location.href = item.href;
     }
   }, [cats]);
 
@@ -202,29 +213,31 @@ export default function Xmb() {
   }, []);
 
   const goto = useCallback((name: string) => {
-    const g = GOTO[name];
-    if (!g) return;
-    const ci = cats.findIndex((c) => c.id === g[0]);
+    const target = GOTO[name];
+    if (!target) return;
+    const [catId, itemId, openPanel] = target;
+    const ci = cats.findIndex((c) => c.id === catId);
     if (ci < 0) return;
     let ii = selOf(ci);
-    if (g[1]) {
-      const found = cats[ci].items.findIndex((it) => it.id === g[1]);
+    if (itemId) {
+      const found = cats[ci].items.findIndex((item) => item.id === itemId);
       if (found >= 0) ii = found;
     }
     setCat(ci);
     setSel((s) => { const n = [...s]; n[ci] = ii; return n; });
-    setPanel(g[2] ? { cat: ci, idx: ii } : null);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    setPanel(openPanel ? { cat: ci, idx: ii } : null);
   }, [cats, sel]);
 
-  // ---------- mount: settings, boot, metrics, clock, battery, hash ----------
+  // ---------- mount: saved settings, music, boot screen, metrics, clock, battery ----------
   useEffect(() => {
     setThemeIdx(store.get("theme", AUTO));
     setWaveOn(store.get("wave", true));
     setSoundOnState(isSoundOn());
     setMusicOnState(isMusicOn());
     const offMusic = onMusicChange(setMusicOnState);
-    // browsers only allow audio after a gesture: start the music on the first one
+    // Browsers block audio until a user gesture, so the music starts on the first
+    // click or key press (capture phase, so it runs before anything else handles it).
+    // The terminal's backtick is skipped: opening it shouldn't start the music.
     const kick = (e: Event) => {
       if (e instanceof KeyboardEvent && e.key === "`") return;
       startMusic();
@@ -236,11 +249,12 @@ export default function Xmb() {
     setMonth(new Date().getMonth());
     setCat(Math.max(0, cats.findIndex((c) => c.id === "profile")));
 
+    // the boot screen plays once per browser session
     let seen = false;
     try {
       seen = sessionStorage.getItem("xmb.booted") === "1";
       sessionStorage.setItem("xmb.booted", "1");
-    } catch { /* ignore */ }
+    } catch { /* storage blocked: show it every time */ }
     let bootTimer: ReturnType<typeof setTimeout> | undefined;
     if (seen || matchMedia("(prefers-reduced-motion: reduce)").matches) {
       setBooting(false);
@@ -261,6 +275,7 @@ export default function Xmb() {
     tick();
     const clockTimer = setInterval(tick, 10000);
 
+    // Battery Status API: Chromium only, so it's optional; elsewhere the icon shows full.
     type BatteryManager = EventTarget & { level: number; charging: boolean };
     const nav = navigator as Navigator & { getBattery?: () => Promise<BatteryManager> };
     nav.getBattery?.().then((b) => {
@@ -270,7 +285,7 @@ export default function Xmb() {
       b.addEventListener("chargingchange", upd);
     }).catch(() => {});
 
-    stageRef.current?.focus({ preventScroll: true });
+    stageRef.current?.focus({ preventScroll: true }); // arrow keys work without clicking first
 
     return () => {
       clearTimeout(bootTimer);
@@ -281,17 +296,15 @@ export default function Xmb() {
       offMusic();
       stopMusic();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // deep link: /play/#projects
+  // deep link, e.g. /play/#projects
   useEffect(() => {
     const hash = location.hash.slice(1);
     if (GOTO[hash]) goto(hash);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // focus management + screen reader announcement
+  // Focus moves into an opened panel so Tab reaches its links, and back to the stage when it closes.
   useEffect(() => {
     if (panel) {
       panelRef.current?.focus({ preventScroll: true });
@@ -299,13 +312,15 @@ export default function Xmb() {
     } else stageRef.current?.focus({ preventScroll: true });
   }, [panel]);
 
+  // Menu buttons are tabIndex -1, so screen readers learn the selection from this live region.
   useEffect(() => {
-    const it = cats[cat]?.items[selOf(cat)];
-    if (it) setAnnounce(`${cats[cat].label}: ${it.title}`);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const item = cats[cat]?.items[selOf(cat)];
+    if (item) setAnnounce(`${cats[cat].label}: ${item.title}`);
   }, [cat, sel]);
 
-  // ---------- project backdrop: fades in after resting on a project ----------
+  // ---------- project backdrop ----------
+  // Shown only after the selection rests on a project for 650 ms, so scrolling
+  // through the list doesn't flash a backdrop for every project passed.
   const [backdrop, setBackdrop] = useState<Project | null>(null);
   const hovered = !booting ? cats[cat]?.items[selOf(cat)]?.thumb ?? null : null;
   useEffect(() => {
@@ -319,7 +334,6 @@ export default function Xmb() {
       play("focus");
     }, 650);
     return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hovered]);
   useEffect(() => duck(!!backdrop), [backdrop]);
 
@@ -338,7 +352,7 @@ export default function Xmb() {
         if (k === "Escape" || k === "Backspace" || k === "ArrowLeft") closePanel();
         else if (k === "ArrowDown") panelBodyRef.current?.scrollBy({ top: 90, behavior: "smooth" });
         else if (k === "ArrowUp") panelBodyRef.current?.scrollBy({ top: -90, behavior: "smooth" });
-        else return; // Tab / Enter work normally on links inside the panel
+        else return; // let Tab / Enter reach the links inside the panel
         e.preventDefault();
         return;
       }
@@ -357,21 +371,26 @@ export default function Xmb() {
     };
     addEventListener("keydown", onKey);
     return () => removeEventListener("keydown", onKey);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [booting, panel, cat, sel, cats, activate, closePanel, moveCat, moveItem, skipBoot]);
 
-  // ---------- wheel + touch (non-passive, so attached manually) ----------
-  const inputRef = useRef({ panel, moveCat, moveItem });
-  inputRef.current = { panel, moveCat, moveItem };
+  // ---------- wheel + touch ----------
+  // Attached with addEventListener because React registers wheel and touchmove
+  // as passive, and these handlers must preventDefault to stop the page scrolling.
+  // They're attached once and read current state through this ref.
+  const latest = useRef({ panel, moveCat, moveItem });
+  latest.current = { panel, moveCat, moveItem };
 
   useEffect(() => {
     const stage = stageRef.current!;
     let acc = 0, lockUntil = 0;
     let touch: { x: number; y: number } | null = null;
 
+    // Trackpads send a stream of small deltas and mouse wheels a few big ones.
+    // Deltas add up to a threshold of 30 before moving one step, and a 110 ms
+    // lock afterwards keeps one flick from racing down the whole list.
     const onWheel = (e: WheelEvent) => {
-      const r = inputRef.current;
-      if (r.panel) return;
+      const { panel, moveCat, moveItem } = latest.current;
+      if (panel) return; // the open panel scrolls natively
       e.preventDefault();
       const horizontal = Math.abs(e.deltaX) > Math.abs(e.deltaY) || e.shiftKey;
       acc += horizontal ? e.deltaX || e.deltaY : e.deltaY;
@@ -380,20 +399,22 @@ export default function Xmb() {
       const dir = Math.sign(acc);
       acc = 0;
       lockUntil = now + 110;
-      if (horizontal) r.moveCat(dir);
-      else r.moveItem(dir);
+      if (horizontal) moveCat(dir);
+      else moveItem(dir);
     };
     const onStart = (e: TouchEvent) => { touch = { x: e.touches[0].clientX, y: e.touches[0].clientY }; };
+    // A swipe is judged on release: mostly horizontal past 40 px changes category;
+    // vertical past 30 px moves one item per ~70 px; swiping up goes down the list, like scrolling.
     const onEnd = (e: TouchEvent) => {
-      const r = inputRef.current;
-      if (!touch || r.panel) return;
+      const { panel, moveCat, moveItem } = latest.current;
+      if (!touch || panel) return;
       const dx = e.changedTouches[0].clientX - touch.x;
       const dy = e.changedTouches[0].clientY - touch.y;
       touch = null;
-      if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) r.moveCat(-Math.sign(dx));
-      else if (Math.abs(dy) > 30) r.moveItem(-Math.sign(dy) * Math.max(1, Math.round(Math.abs(dy) / 70)));
+      if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) moveCat(-Math.sign(dx));
+      else if (Math.abs(dy) > 30) moveItem(-Math.sign(dy) * Math.max(1, Math.round(Math.abs(dy) / 70)));
     };
-    const onMove = (e: TouchEvent) => { if (!inputRef.current.panel) e.preventDefault(); };
+    const onMove = (e: TouchEvent) => { if (!latest.current.panel) e.preventDefault(); };
 
     stage.addEventListener("wheel", onWheel, { passive: false });
     stage.addEventListener("touchstart", onStart, { passive: true });
@@ -408,34 +429,39 @@ export default function Xmb() {
   }, []);
 
   // ---------- layout ----------
-  const m = metrics;
+  // The selected item always sits directly under the category icon. Items before
+  // it stack upward above the category row (only the nearest two stay visible,
+  // fading out); items after it continue below, fading gradually but never
+  // vanishing. All columns are laid out; CSS hides the inactive ones.
+  const { ax, cy, gap, catH, itemH, selH } = metrics;
   function itemStyle(ci: number, j: number): React.CSSProperties {
     const s = selOf(ci);
     let y: number, op: number;
     if (j < s) {
-      const d = s - j;
-      y = m.cy - d * m.itemH;
-      op = d <= 2 ? 0.45 - (d - 1) * 0.2 : 0;
+      const above = s - j;
+      y = cy - above * itemH;
+      op = above <= 2 ? 0.45 - (above - 1) * 0.2 : 0;
     } else if (j === s) {
-      y = m.cy + m.catH;
+      y = cy + catH;
       op = 1;
     } else {
-      y = m.cy + m.catH + m.selH + (j - s - 1) * m.itemH;
-      op = Math.max(0.15, 0.75 - (j - s - 1) * 0.1);
+      const below = j - s - 1;
+      y = cy + catH + selH + below * itemH;
+      op = Math.max(0.15, 0.75 - below * 0.1);
     }
-    return { transform: `translate(${m.ax}px, ${y}px)`, opacity: op, pointerEvents: op > 0 ? undefined : "none" };
+    return { transform: `translate(${ax}px, ${y}px)`, opacity: op, pointerEvents: op > 0 ? undefined : "none" };
   }
 
   const openItem = panel ? cats[panel.cat]?.items[panel.idx] : null;
   const rootClass = ["xmb-root", !booting && "ready", !intro && "no-intro", panel && "panel-open", backdrop && "has-backdrop"].filter(Boolean).join(" ");
 
   return (
-    <div className={rootClass} style={{ "--h": hue, "--s": `${sat}%`, "--ax": `${m.ax}px` } as React.CSSProperties}>
+    <div className={rootClass} style={{ "--h": hue, "--s": `${sat}%`, "--ax": `${ax}px` } as React.CSSProperties}>
       <Wave hue={hue} sat={sat} enabled={waveOn} />
       <Backdrop p={backdrop} />
 
       <header className="topbar">
-        <a className="back-classic" href="/" title="Switch to the professional site">
+        <a className="back-classic" href={ROUTES.professional} title="Switch to the professional site">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg>
           Professional site
         </a>
@@ -478,7 +504,7 @@ export default function Xmb() {
               className={"cat" + (ci === cat ? " is-active" : "")}
               tabIndex={-1}
               aria-label={c.label}
-              style={{ transform: `translate(${m.ax + (ci - cat) * m.gap}px, ${m.cy}px)` }}
+              style={{ transform: `translate(${ax + (ci - cat) * gap}px, ${cy}px)` }}
               onMouseDown={noFocus}
               onClick={() => {
                 if (panel) setPanel(null);
@@ -494,11 +520,11 @@ export default function Xmb() {
         <div className="cols">
           {cats.map((c, ci) => (
             <div key={c.id} className={"col" + (c.thumbs ? " col-thumbs" : "") + (ci === cat ? " is-active" : "")}>
-              {c.items.map((it, j) => {
+              {c.items.map((item, j) => {
                 const pulsing = pulse.startsWith(`${ci}-${j}-`);
                 return (
                   <button
-                    key={it.title + j}
+                    key={item.title + j}
                     className={"item" + (j === selOf(ci) ? " is-sel" : "") + (pulsing ? " pulse" : "")}
                     tabIndex={-1}
                     style={itemStyle(ci, j)}
@@ -509,10 +535,11 @@ export default function Xmb() {
                       activate(ci, j);
                     }}
                   >
-                    {it.thumb ? <Thumb p={it.thumb} /> : <Icon name={it.icon ?? "doc"} />}
+                    {item.thumb ? <Thumb p={item.thumb} /> : <Icon name={item.icon ?? "doc"} />}
                     <span className="item-text">
-                      <span className="item-title">{it.title}</span>
-                      <span className="item-sub" key={pulsing ? pulse : "sub"}>{it.sub}</span>
+                      <span className="item-title">{item.title}</span>
+                      {/* a new key remounts the subtitle so its flash animation replays */}
+                      <span className="item-sub" key={pulsing ? pulse : "sub"}>{item.sub}</span>
                     </span>
                   </button>
                 );
@@ -558,21 +585,19 @@ export default function Xmb() {
 
       <div className="sr-only" aria-live="polite">{announce}</div>
 
-      {booting !== null && (
-        <div className={"boot" + (booting ? "" : " is-done")} aria-hidden="true" onClick={skipBoot}>
-          <div className="boot-inner">
-            <p className="boot-name">{SITE.name}</p>
-            <p className="boot-sub">portfolio</p>
-          </div>
+      <div className={"boot" + (booting ? "" : " is-done")} aria-hidden="true" onClick={skipBoot}>
+        <div className="boot-inner">
+          <p className="boot-name">{SITE.name}</p>
+          <p className="boot-sub">portfolio</p>
         </div>
-      )}
+      </div>
 
-      <Terminal mode="xmb" onGo={goto} />
+      <Terminal mode="play" onGo={goto} />
     </div>
   );
 }
 
-/** Control hint: keyboard keys + the mouse equivalent (touch wording on touch screens). */
+/** Footer control hint: keys plus the mouse equivalent; CSS swaps in the touch wording on touch screens. */
 function Hint({ keys, mouse, touch, label, onClick }: { keys: string[]; mouse: string; touch?: string; label: string; onClick?: () => void }) {
   return (
     <button className={"hint" + (touch ? "" : " hint-no-touch")} tabIndex={-1} onMouseDown={noFocus} onClick={onClick}>

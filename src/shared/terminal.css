@@ -1,4 +1,5 @@
-/* terminal.css — the ` easter egg, shared by both versions */
+/* Rendered under either mode's stylesheet, so it defines its own --t-* colors
+   instead of relying on the page's variables. */
 
 .terminal {
   --t-bg: rgba(10, 12, 16, 0.94);

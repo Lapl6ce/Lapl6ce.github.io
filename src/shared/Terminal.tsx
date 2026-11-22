@@ -1,22 +1,25 @@
 "use client";
 
-/* Easter egg terminal, shared by both versions. Press ` anywhere to toggle.
-   Other components can open it with openTerminal() and check isTerminalOpen(). */
+/* Easter-egg terminal used by both modes, toggled with the backtick key.
+   Open state is mirrored to <body data-terminal> so isTerminalOpen() works from
+   any component without lifting state up. */
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { SITE, LINK_LABELS } from "@/content/site";
-import { play } from "@/lib/sfx";
+import { SITE, LINK_LABELS, profileLinks } from "@/content/site";
+import { play } from "./sfx";
+import { ROUTES } from "./links";
 import "./terminal.css";
 
 const OPEN_EVENT = "terminal:open";
+/** Opens the terminal from anywhere (e.g. a click handler) via a window event. */
 export const openTerminal = () => window.dispatchEvent(new Event(OPEN_EVENT));
 export const isTerminalOpen = () => document.body.dataset.terminal === "open";
 
 type Line = { text: string; echo?: boolean };
 
 type Props = {
-  mode: "classic" | "xmb";
-  /** jump to a section: "about" | "projects" | "contact" | ... */
+  mode: "professional" | "play";
+  /** Navigate to a named section, e.g. "projects". Defaults to scrolling to the element with that id. */
   onGo?: (section: string) => void;
 };
 
@@ -38,8 +41,7 @@ export default function Terminal({ mode, onGo }: Props) {
     }
   }, []);
 
-  // open/close effects
-  const firstRender = useRef(true);
+  const firstRender = useRef(true); // no open/close sound on mount
   useEffect(() => {
     document.body.dataset.terminal = open ? "open" : "closed";
     if (open) inputRef.current?.focus();
@@ -51,9 +53,9 @@ export default function Terminal({ mode, onGo }: Props) {
     outRef.current?.scrollTo({ top: outRef.current.scrollHeight });
   }, [lines]);
 
-  // global ` shortcut + programmatic open
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      // let a backtick be typed into form fields
       const typing = /^(INPUT|TEXTAREA)$/.test((document.activeElement as HTMLElement)?.tagName);
       if (e.key === "`" && !typing) {
         e.preventDefault();
@@ -77,6 +79,15 @@ export default function Terminal({ mode, onGo }: Props) {
     return `opening ${section}...`;
   }
 
+  const toPlay = () => {
+    location.href = ROUTES.play;
+    return "booting fun mode...";
+  };
+  const toProfessional = () => {
+    location.href = ROUTES.professional;
+    return "loading classic site...";
+  };
+
   const commands: Record<string, () => string> = {
     help: () =>
       [
@@ -87,7 +98,7 @@ export default function Terminal({ mode, onGo }: Props) {
         "  skills     list my stack",
         "  contact    how to reach me",
         "  resume     open my résumé",
-        mode === "xmb" ? "  classic    switch to the professional site" : "  fun        switch to fun mode (console-style)",
+        mode === "play" ? "  classic    switch to the professional site" : "  fun        switch to fun mode (console-style)",
         "  clear      clear the screen",
         "  exit       close this terminal",
       ].join("\n"),
@@ -98,27 +109,18 @@ export default function Terminal({ mode, onGo }: Props) {
     contact: () =>
       [
         `email     ${SITE.email}`,
-        ...Object.entries(SITE.links)
-          .filter(([, u]) => u)
-          .map(([k, u]) => `${(LINK_LABELS[k] || k).toLowerCase().padEnd(10)}${u}`),
+        ...profileLinks().map(([k, u]) => `${(LINK_LABELS[k] || k).toLowerCase().padEnd(10)}${u}`),
       ].join("\n"),
     resume: () => {
       if (!SITE.resume) return "no résumé linked yet.";
       window.open(SITE.resume, "_blank", "noopener");
       return "opening résumé...";
     },
-    fun: () => {
-      location.href = "/play/";
-      return "booting fun mode...";
-    },
-    xmb: () => {
-      location.href = "/play/";
-      return "booting fun mode...";
-    },
-    classic: () => {
-      location.href = "/";
-      return "loading classic site...";
-    },
+    fun: toPlay,
+    play: toPlay,
+    xmb: toPlay,
+    classic: toProfessional,
+    pro: toProfessional,
     sudo: () => "nice try. permission denied.",
     ls: () => "about  projects  skills  contact  resume",
     exit: () => {
@@ -144,7 +146,7 @@ export default function Terminal({ mode, onGo }: Props) {
   }
 
   function onKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
-    e.stopPropagation(); // keep arrow keys etc. away from the XMB
+    e.stopPropagation(); // fun mode listens for arrow keys on window; keep them in the input
     if (e.key === "Enter") {
       play("click");
       run(value);

@@ -1,19 +1,20 @@
 "use client";
 
-/* Building blocks for XMB items and detail panels. */
+// Menu thumbnails and the bodies of fun mode's detail panels.
 
 import { useState, type ReactNode } from "react";
 import { SITE, domain, hueOf, liveSites, type Education, type Project, type TimelineEntry } from "@/content/site";
+import { external } from "@/shared/links";
 import { Icon, type IconName } from "./icons";
+import { CHANGELOG } from "./config";
 
-/** "Game card" thumbnail for a project: its thumb, else a site screenshot, else generated. */
+/** "Game card" thumbnail for a project: its screenshot, else a site screenshot, else generated. */
 export function Thumb({ p, big = false }: { p: Project; big?: boolean }) {
   const cls = "thumb" + (big ? " thumb-big" : "");
-  const img = p.thumb || p.preview || liveSites(p).find((s) => s.image)?.image;
+  const img = p.preview || liveSites(p).find((s) => s.image)?.image;
   if (img) {
     return (
       <span className={cls}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={img} alt="" />
       </span>
     );
@@ -37,7 +38,6 @@ function SiteCard({ site }: { site: { name: string; url: string; image?: string 
       </span>
       <span className="preview-shot">
         {site.image && !broken ? (
-          // eslint-disable-next-line @next/next/no-img-element
           <img src={site.image} alt={`Screenshot of ${site.name}`} loading="lazy" onError={() => setBroken(true)} />
         ) : (
           <span className="preview-fallback">{domain(site.url)}</span>
@@ -61,6 +61,7 @@ export function SitePreviews({ item }: { item: { sites?: { name: string; url: st
   );
 }
 
+/** Label/value rows; rows with an empty value are skipped. */
 export function InfoTable({ rows }: { rows: [string, ReactNode][] }) {
   return (
     <dl className="info">
@@ -82,8 +83,6 @@ function Bullets({ points }: { points?: string[] }) {
   );
 }
 
-const ext = { target: "_blank", rel: "noopener" };
-
 /* ---------- panel bodies ---------- */
 
 export function AboutPanel() {
@@ -101,13 +100,13 @@ export function ContactPanel() {
   const { github, linkedin, upwork } = SITE.links;
   return (
     <>
-      <p>Open to software development internships and freelance work. Email is the fastest way to reach me.</p>
+      <p>{SITE.contactNote}</p>
       <InfoTable
         rows={[
           ["Email", <a key="e" href={`mailto:${SITE.email}`}>{SITE.email}</a>],
-          ["GitHub", github && <a key="g" href={github} {...ext}>{domain(github)}</a>],
-          ["LinkedIn", linkedin && <a key="l" href={linkedin} {...ext}>{domain(linkedin)}</a>],
-          ["Upwork", upwork && <a key="u" href={upwork} {...ext}>Upwork profile</a>],
+          ["GitHub", github && <a key="g" href={github} {...external(github)}>{domain(github)}</a>],
+          ["LinkedIn", linkedin && <a key="l" href={linkedin} {...external(linkedin)}>{domain(linkedin)}</a>],
+          ["Upwork", upwork && <a key="u" href={upwork} {...external(upwork)}>Upwork profile</a>],
         ]}
       />
     </>
@@ -134,7 +133,7 @@ export function JobPanel({ j }: { j: TimelineEntry }) {
 
 function LinkButton({ label, url, icon }: { label: string; url: string; icon: IconName }) {
   return (
-    <a className="pbtn" href={url} {...(/^https?:/.test(url) ? ext : {})}>
+    <a className="pbtn" href={url} {...external(url)}>
       <Icon name={icon} />
       {label}
     </a>
@@ -183,7 +182,7 @@ export function SystemPanel({ theme }: { theme: string }) {
     <>
       <InfoTable
         rows={[
-          ["System Software", `Version ${SITE.changelog[0]?.version ?? "1.0"}`],
+          ["System Software", `Version ${CHANGELOG[0]?.version ?? "1.0"}`],
           ["Nickname", SITE.handle],
           ["Theme", theme],
           ["Screen", screen],
@@ -192,7 +191,7 @@ export function SystemPanel({ theme }: { theme: string }) {
       />
       <h3>Update History</h3>
       <ul className="plist changelog">
-        {SITE.changelog.map((c) => (
+        {CHANGELOG.map((c) => (
           <li key={c.version}>
             <strong>v{c.version}</strong>
             <span className="muted"> {c.date} </span> {c.note}

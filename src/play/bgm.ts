@@ -1,26 +1,14 @@
-/* ============================================================
-   bgm.ts — background music for the XMB (/play) version.
+/* Fun mode's background music. Plays the files in TRACKS in order, looping;
+   if none load, an ambient piece is synthesized live instead: slow wide chords,
+   a breathing noise layer and sparse bell notes in a long reverb.
+   Browsers block audio until a click or key press, so start() has to be called
+   from a gesture handler. */
 
-   TRACKS: drop audio files into public/assets/audio/ and list
-   them below. They play in order and loop. Use music you have
-   the rights to.
-   If none load, an original ambient piece is synthesized live
-   (Web Audio, no files): slow washed-out chords, a soft "air"
-   layer and sparse glassy notes in a long reverb.
+import { makeImpulse } from "@/shared/sfx";
 
-   Browsers block audio until the visitor clicks or presses a
-   key, so start() must be called from a gesture.
-   The on/off setting is remembered (localStorage "bgm.enabled").
-   duck(true) lowers the music, e.g. while a project's backdrop
-   is showing.
-   ============================================================ */
-
-import { makeImpulse } from "./sfx";
-
-const TRACKS: string[] = [
-  "/assets/audio/psp.mp3",
-  "/assets/audio/vita.mp3",
-];
+// Paths under public/assets/audio/. Empty, so the synthesized piece plays; every
+// listed file that doesn't exist costs a failed request before the fallback.
+const TRACKS: string[] = [];
 const VOLUME = 0.35; // file tracks
 const SYNTH_VOLUME = 0.55; // generated fallback (master)
 const DUCKED = 0.35; // fraction of normal volume while ducked
@@ -52,7 +40,7 @@ export function setMusicOn(on: boolean) {
   try {
     localStorage.setItem(KEY, on ? "1" : "0");
   } catch {
-    /* ignore */
+    /* storage blocked: the setting lasts for this page only */
   }
   listeners.forEach((fn) => fn(on));
   if (on) start();
@@ -64,6 +52,7 @@ export function start() {
   if (typeof window === "undefined" || !isMusicOn()) return;
   if (!started) {
     started = true;
+    // silence in background tabs
     document.addEventListener("visibilitychange", () => {
       if (document.hidden) pause();
       else if (isMusicOn()) resume();
@@ -74,12 +63,12 @@ export function start() {
   resume();
 }
 
-/** Stop everything (e.g. when leaving the page). */
+/** Stops playback without changing the on/off setting (e.g. on unmount). */
 export function stop() {
   pause();
 }
 
-/** Lower (or restore) the music volume smoothly. */
+/** Lowers (or restores) the volume smoothly, e.g. while a project backdrop is showing. */
 export function duck(on: boolean) {
   if (ducked === on) return;
   ducked = on;
@@ -88,6 +77,7 @@ export function duck(on: boolean) {
 }
 
 // ---------- file playback ----------
+// <audio> volume can't be ramped natively, so fades step it on an interval.
 
 let el: HTMLAudioElement | null = null;
 let mode: "files" | "synth" | null = null;
@@ -104,6 +94,8 @@ function fadeElement(a: HTMLAudioElement, target: number) {
   }, 40);
 }
 
+/** Plays track i; a track that fails to load skips to the next. After a full
+ *  round of failures it switches to the synthesizer for good. */
 async function playFiles(i: number, failures: number) {
   if (failures >= TRACKS.length) {
     mode = "synth";
@@ -139,6 +131,8 @@ function resume() {
 // ---------- synthesized fallback ----------
 
 const synth = (() => {
+  // Separate AudioContext from sfx.ts so the music's master fade and ducking
+  // never touch the sound effects.
   let ctx: AudioContext | null = null;
   let master: GainNode | null = null;
   let bus: GainNode | null = null; // everything musical goes here → dry + reverb
@@ -165,9 +159,10 @@ const synth = (() => {
     if (!AC) return null;
     ctx = new AC();
     master = ctx.createGain();
-    master.gain.value = 0;
+    master.gain.value = 0; // start() fades in from silence
     master.connect(ctx.destination);
 
+    // bus → low-pass (takes the edge off the sines) → dry and long-reverb paths
     bus = ctx.createGain();
     const lp = ctx.createBiquadFilter();
     lp.type = "lowpass";
@@ -190,7 +185,7 @@ const synth = (() => {
     const g = ac.createGain();
     osc.type = type;
     osc.frequency.value = freq;
-    osc.detune.value = (Math.random() - 0.5) * 10;
+    osc.detune.value = (Math.random() - 0.5) * 10; // ±5 cents, so stacked voices sound less synthetic
     g.gain.setValueAtTime(0.0001, t);
     g.gain.exponentialRampToValueAtTime(peak, t + attack);
     g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
@@ -217,6 +212,7 @@ const synth = (() => {
     bp.type = "bandpass";
     bp.frequency.value = 600;
     bp.Q.value = 0.6;
+    // a 20 s LFO sweeps the band-pass centre ±350 Hz: the "breathing"
     const lfo = ac.createOscillator();
     lfo.frequency.value = 0.05;
     const depth = ac.createGain();
@@ -230,11 +226,13 @@ const synth = (() => {
     air = { src, lfo };
   }
 
+  /** Schedules one chord with its bell notes, then re-arms itself for the next bar. */
   function bar() {
     if (!running || !ctx) return;
     const t = ctx.currentTime + 0.05;
     const chord = CHORDS[step % CHORDS.length];
-    // pad: slow swell, long tail that overlaps the next chord
+    // pad: slow swell, with a tail 4 s past the bar so chords overlap rather than cut
+    // (the root is a louder triangle so the bass carries)
     chord.forEach((n, k) => {
       voice(hz(n), t, BAR + 4, k === 0 ? 0.03 : 0.014, k === 0 ? "triangle" : "sine", 3);
       if (k > 0) voice(hz(n) * 1.003, t, BAR + 4, 0.007, "sine", 3.5); // slight chorus
@@ -263,7 +261,7 @@ const synth = (() => {
       running = true;
       if (!air) startAir();
       master!.gain.cancelScheduledValues(ac.currentTime);
-      master!.gain.setTargetAtTime(target(), ac.currentTime, 2);
+      master!.gain.setTargetAtTime(target(), ac.currentTime, 2); // slow fade in
       bar();
     },
     stop() {

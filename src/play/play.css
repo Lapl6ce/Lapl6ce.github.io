@@ -1,12 +1,9 @@
-/* ============================================================
-   xmb.css — the experimental handheld-console menu version.
-   --h / --s (theme hue + saturation) are set by xmb.js.
-   ============================================================ */
+/* --h / --s (theme hue and saturation) and --ax are set inline on .xmb-root by Xmb.tsx. */
 
 :root {
   --h: 20;
   --s: 55%;
-  --ax: 20vw;                       /* x position of the active column (set by js) */
+  --ax: 20vw; /* x of the active column; fallback until Xmb.tsx measures the window */
   --text: #fff;
   --text-dim: rgba(255, 255, 255, 0.7);
   --text-faint: rgba(255, 255, 255, 0.5);
