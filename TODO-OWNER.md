@@ -24,13 +24,12 @@ earlier wording below, so nothing raw reaches the live site.
 | Text | `about[0]` (site.ts:143) | Who you are and what you like building, in your own voice. |
 | Text | `about[1]` (site.ts:144) | The AKD Jewelers work and what was hard about it. |
 | Text | `about[2]` (site.ts:145) | Something outside code that matters to you. |
-| Text | York University `points[0]` (site.ts:181) | Relevant courses. |
 | Text | Sync System `flow` (comment at site.ts:205) | The real steps of the sync, e.g. signature check, queue/retry, plugin call. The current four steps come from the description. |
 | Text | Sync System `caseStudy` (site.ts:210–213) | Problem / approach / what broke / result. |
 | Text | Dagina Designs `caseStudy` (site.ts:229–232) | Problem / approach / what broke / result. |
 | Text | thrift_feed `caseStudy` (site.ts:265–268) | Problem / approach / what broke / result. |
 | Text | Neighbor `myPart` (site.ts:250) | What you personally built; the repo is razoring's. Shown as "My part:". |
-| Text | AI 3D Asset Generator `myPart` (site.ts:325) | What you personally built; the repo is anthskti's. Shown as "My part:". |
+| Text | AI 3D Asset Generator `myPart` (site.ts:327) | What you personally built; the repo is anthskti's. Shown as "My part:". |
 | Numbers | AKD Jewelers impact bullet (site.ts:159) | Products/orders synced, webhooks per day, hours saved, error rate: whichever you can stand behind. |
 | Numbers | thrift_feed `year` (site.ts:254) | Year built. |
 | Numbers | Vaie `year` (site.ts:274) | Year built. |
@@ -47,6 +46,11 @@ earlier wording below, so nothing raw reaches the live site.
 
 Done in this pass: `public/assets/previews/vaie.jpg` (three screens from the Vaie repo's
 Media folder), `public/assets/photo.jpg`, and the thrift_feed case-study images.
+
+Done from the November 2026 résumé: the new résumé PDF at `public/assets/Ebrahim_Daginawala_Resume.pdf`,
+York University relevant coursework, the AI 3D Asset Generator description (the two Gemini calls),
+and Zapier and Google Sheets added to the tools list. The résumé had nothing new for the other rows
+(no project years, no AKD numbers, and the sync steps it lists match the current flow).
 
 Keep each image around 100–150 KB. Drop a file at its path and the page picks it up on the
 next build (or on reload under `npm run dev`); no code change is needed.

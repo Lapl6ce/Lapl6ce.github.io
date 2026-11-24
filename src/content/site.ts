@@ -178,7 +178,7 @@ const DRAFT: Site = {
       date: "Expected 2029",
       location: "Toronto, Canada",
       points: [
-        "TODO(owner): relevant courses",
+        "Relevant coursework: Java, Python, discrete mathematics, advanced computational logic, linear algebra, calculus I and II, probability and statistics.",
       ],
     },
     {
@@ -319,8 +319,10 @@ const DRAFT: Site = {
       name: "AI 3D Asset Generator",
       year: "TODO(owner): year",
       blurb: "Generates 3D assets from images for use in game engines.",
-      description: "A tool that generates 3D assets from images for use in game engines.",
-      tags: ["AI", "Image-to-3D", "Game engines"],
+      description:
+        "A tool that generates 3D assets from images for use in game engines, using two Gemini API calls: " +
+        "one produces a text file of vectors, the other translates it into an .obj file.",
+      tags: ["Gemini API", "Image-to-3D", "Game engines"],
       links: { code: "https://github.com/anthskti/fabfab" },
       myPart: "TODO(owner): what you personally built (the repo is a teammate's)",
     },
@@ -339,7 +341,7 @@ const DRAFT: Site = {
 
   skills: [
     { group: "Languages", items: ["Python", "JavaScript", "TypeScript", "Java", "HTML/CSS", "Rust (learning)"] },
-    { group: "Frameworks & Tools", items: ["React", "Next.js", "Node.js/Express", "WordPress", "Shopify (custom apps)", "Drizzle ORM", "Postgres", "Git/GitHub"] },
+    { group: "Frameworks & Tools", items: ["React", "Next.js", "Node.js/Express", "WordPress", "Shopify (custom apps)", "Drizzle ORM", "Postgres", "Git/GitHub", "Zapier", "Google Sheets"] },
     { group: "Concepts", items: ["REST API integration", "Webhooks", "Workflow automation", "Full-stack web development"] },
   ],
 
