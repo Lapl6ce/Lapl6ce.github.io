@@ -46,7 +46,7 @@ function imageItems() {
     for (const src of p.caseStudy?.images ?? []) items.push({ path: src, spec: WIDE, what: `${p.name} case study` });
   }
   items.push({ path: SITE.photo ?? "/assets/photo.jpg", spec: "800×800 JPG, square (optional)", what: "About photo" });
-  // one file can fill two slots (thrift_feed's card and case study)
+  // one file can fill two slots (a project's card and its case study)
   const byPath = new Map<string, (typeof items)[number]>();
   for (const it of items) {
     const seen = byPath.get(it.path);

@@ -250,26 +250,6 @@ const DRAFT: Site = {
       myPart: "TODO(owner): what you personally built (the repo is a teammate's)",
     },
     {
-      name: "thrift_feed",
-      year: "TODO(owner): year",
-      blurb: "Thrift marketplace with shop pages, anonymous visitor identity, and a persistent cart.",
-      description:
-        "A thrift marketplace with item and shop pages, cookie-based anonymous visitor identity, and a " +
-        "persistent wishlist and cart, backed by a Neon Postgres database through Drizzle ORM.",
-      tags: ["Next.js 15", "Drizzle ORM", "Neon Postgres"],
-      links: {},
-      flow: ["Next.js 15 storefront", "Drizzle ORM", "Neon Postgres"],
-      featured: true,
-      sites: [{ name: "thrift_feed", url: "https://thrifty-brown.vercel.app/", image: "/assets/previews/thrift-feed.jpg" }],
-      caseStudy: {
-        problem: "TODO(owner): thrift_feed, the problem: what needed solving, for whom, and why it mattered",
-        approach: "TODO(owner): thrift_feed, the approach: what you built and the key decisions",
-        whatBroke: "TODO(owner): thrift_feed, what broke: the hardest bug or failure and how you fixed it",
-        result: "TODO(owner): thrift_feed, the result: what changed for the users, with numbers if you have them",
-        images: ["/assets/previews/thrift-feed-shop.jpg", "/assets/previews/thrift-feed-drop.jpg"],
-      },
-    },
-    {
       name: "Vaie",
       year: "TODO(owner): year",
       blurb: "Hackathon app teaching village students and adults in 11 Indian languages, by voice.",

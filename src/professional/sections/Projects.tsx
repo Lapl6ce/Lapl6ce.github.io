@@ -142,9 +142,13 @@ function IndexRow({ p, n }: { p: Project; n: number }) {
   );
 }
 
+/** True when the figure will show a real screenshot rather than a box, diagram or bare name. */
+const hasPicture = (p: Project) => liveSites(p).length > 0 || !!p.preview || !!(p.imageNeeded && findImage(p.imageNeeded));
+
 export default function Projects() {
   const projects = featuredFirst(SITE.projects);
-  const featured = projects.filter((p) => p.featured);
+  // pictureless features sink below the ones with screenshots; stable sort keeps site.ts order within each group
+  const featured = projects.filter((p) => p.featured).sort((a, b) => Number(hasPicture(b)) - Number(hasPicture(a)));
   // entries with something to click lead the index; sort is stable, so site.ts order holds within each group
   const rest = projects
     .filter((p) => !p.featured)
