@@ -424,7 +424,20 @@ h3 {
 .features { row-gap: var(--sp-7); }
 .feature > .margin { padding-top: 0; }
 
-.fig { margin-bottom: var(--sp-5); }
+.fig { margin: var(--sp-4) 0 var(--sp-4); }
+
+/* project number: same size as the title so they read as one line, but faint
+   and fixed-width so the titles after it line up */
+/* the number hangs: a title that wraps lines up under its own first word */
+.feature h3, .index-row h3 { display: flex; align-items: baseline; }
+.proj-n {
+  flex: none;
+  min-width: 2.2ch;
+  margin-right: var(--sp-3);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-faint);
+}
 
 .project-notes p + p { margin-top: var(--sp-1); }
 
@@ -449,7 +462,6 @@ h3 {
   font-variation-settings: "wdth" 90;
   color: var(--ink-soft);
 }
-.fig-n { margin-right: var(--sp-2); font-family: var(--mono); font-size: var(--fs-data); color: var(--ink-faint); }
 
 /* how-it-works diagram: boxes joined by drawn arrows */
 .flow {

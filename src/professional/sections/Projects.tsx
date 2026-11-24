@@ -86,21 +86,34 @@ function CaseStudy({ p }: { p: Project }) {
   );
 }
 
-/** A featured project: figure first, then what it is. The caption carries the
- *  year and the stack sits under the title, beside where the eye already is,
- *  so the margin stays empty here. */
+/** Two-digit project number before a title: the list runs past nine, and equal
+ *  widths keep the titles lined up. */
+function Num({ n }: { n: number }) {
+  return (
+    <span className="proj-n" aria-hidden="true">
+      {String(n).padStart(2, "0")}
+    </span>
+  );
+}
+
+/** A featured project: number and title first, so the reader knows what the
+ *  picture shows before reaching it. The caption carries the year and the
+ *  stack sits under the title, so the margin stays empty here. */
 function Feature({ p, n }: { p: Project; n: number }) {
   return (
     <li className="entry feature">
       <div className="entry-body">
-        <ProjectMedia p={p} n={n} />
-        <h3>{p.name}</h3>
+        <h3>
+          <Num n={n} />
+          {p.name}
+        </h3>
         {p.tags.length > 0 && (
           <p className="feature-stack">
             <span className="sr-only">Built with </span>
             {p.tags.join(" / ")}
           </p>
         )}
+        <ProjectMedia p={p} />
         <p className="feature-desc">{p.description || p.blurb}</p>
         <MyPart p={p} />
         <LinkList className="project-links" links={projectLinks(p, true)} />
@@ -111,13 +124,16 @@ function Feature({ p, n }: { p: Project; n: number }) {
 }
 
 /** Everything else: one ruled row each. The name is the link. */
-function IndexRow({ p }: { p: Project }) {
+function IndexRow({ p, n }: { p: Project; n: number }) {
   const [first, ...more] = projectLinks(p, false);
   return (
     <li className="entry index-row">
       <Notes p={p} />
       <div className="entry-body">
-        <h3>{first ? <OutLink className="title-link" url={first[1]}>{p.name}</OutLink> : p.name}</h3>
+        <h3>
+          <Num n={n} />
+          {first ? <OutLink className="title-link" url={first[1]}>{p.name}</OutLink> : p.name}
+        </h3>
         <p className="index-blurb">{p.blurb}</p>
         <MyPart p={p} />
         <LinkList className="project-links" links={more} />
@@ -144,8 +160,9 @@ export default function Projects() {
         <>
           <h3 className="sub-h">More projects</h3>
           <ul className="entries project-index">
-            {rest.map((p) => (
-              <IndexRow key={p.name} p={p} />
+            {/* numbering carries on from the featured list: one count for the whole section */}
+            {rest.map((p, i) => (
+              <IndexRow key={p.name} p={p} n={featured.length + i + 1} />
             ))}
           </ul>
         </>

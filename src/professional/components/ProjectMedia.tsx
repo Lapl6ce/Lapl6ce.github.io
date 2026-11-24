@@ -1,7 +1,8 @@
 /* The figure for a featured project, captioned like a lab report. Picture, in
    order of preference: live site → screenshot → the `imageNeeded` file (or a
    box asking for it) → how-it-works diagram → the name on a plain ground.
-   Demo mode skips the box. The caption carries the links and the year, not the picture. */
+   Demo mode skips the box. The caption carries the links and the year, not the
+   picture; the project's number and title sit above it. */
 
 import { Fragment, type ReactNode } from "react";
 import { domain, liveSites, type Project } from "@/content/site";
@@ -39,7 +40,7 @@ function picture(p: Project): { media: ReactNode; label: ReactNode } {
   return { media: <div className="shot is-empty"><span>{p.name}</span></div>, label: p.name };
 }
 
-export default function ProjectMedia({ p, n }: { p: Project; n: number }) {
+export default function ProjectMedia({ p }: { p: Project }) {
   const { media, label } = picture(p);
   const parts: ReactNode[] = [label];
   if (p.links.code) parts.push(<OutLink url={p.links.code}>Code</OutLink>);
@@ -48,7 +49,6 @@ export default function ProjectMedia({ p, n }: { p: Project; n: number }) {
     <figure className="fig">
       {media}
       <figcaption>
-        <span className="fig-n">Fig. {n}</span>{" "}
         {parts.map((part, i) => (
           <Fragment key={i}>
             {i > 0 && <span className="sep" aria-hidden="true"> · </span>}

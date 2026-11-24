@@ -174,7 +174,7 @@ Rules:
 | `lead` | 1.3125rem (21px) | 400 / 100 | 1.45 | The one-paragraph intro under the name. |
 | `body` | 1.0625rem (17px) | 400 / 100 | 1.6 | All prose. Measure 60–72ch. |
 | `note` | 0.9375rem (15px) | 400 / 90 | 1.45 | Everything in the margin column (dates, stacks, skill groups) in `ink-soft`, plus nav, captions' text part, and the stack line under a featured project's title. |
-| `data` | 0.8125rem (13px) mono | 400 | 1.5 | `Fig. n` and the small "Now" label. Tabular and slashed-zero numerals. Not used in the margin: people skimming skip small grey mono. |
+| `data` | 0.8125rem (13px) mono | 400 | 1.5 | The small "Now" label. Tabular and slashed-zero numerals. Not used in the margin: people skimming skip small grey mono. |
 
 That's seven sizes, and nothing else is allowed. The steps are deliberately far apart (display → headline is roughly 2.7×, headline → title 1.6×) so the hierarchy reads at a glance.
 
@@ -238,12 +238,14 @@ The sticky nav is the only layered element. It sits on `paper` (opaque, no blur)
 
 **Figure (replaces cards)**: the work, shown plainly.
 - An image, GIF or video in full colour, with a 1px `ink` border on `paper-deep`.
-- Below it, a caption: `Fig. 2` in `data`, then, separated by ` · `, the live-site link (or what the figure shows), "Code ↗" when there is a code link, and the year when known.
+- Above it, the project's number and title (see Project entry), so the reader knows what the picture shows before reaching it.
+- Below it, a caption: separated by ` · `, the live-site link (or what the figure shows), "Code ↗" when there is a code link, and the year when known.
 - ASCII or SVG diagrams you drew yourself are first-class figures, e.g. the Shopify → webhook → WordPress diagram.
 - No hover lift, scale or shadow. If the figure links somewhere, the caption carries the link.
 
 **Project entry**:
-- **Featured**: a figure at main-column width, then the name in `title`, the stack line in `note` `ink-soft` (`Next.js / Drizzle / Neon Postgres`), one `body` paragraph, and for team projects a "My part:" line.
+- **Numbering**: every project in the section has a two-digit number before its title (`01`–`10`), in the title's size, `ink-faint`, tabular figures. Featured projects come first and More projects continue the count. This is the one place numbering is allowed: it gives the list an order people can refer to ("project 03").
+- **Featured**: the number and name in `title`, the stack line in `note` `ink-soft` (`Next.js / Drizzle / Neon Postgres`), then the figure at main-column width, one `body` paragraph, and for team projects a "My part:" line.
 - **The rest**: rows in a ruled list. Name in `title` (ink, with a quiet underline and a blue arrow when it links), one sentence in `ink-soft`, and the year over the stack in the margin. No tech chips, no `./` prefixes, no repeated "Code ↗" button. The name itself is the link.
 
 **Experience / education entry**: the role in `title`; the organisation and place in `body` `ink-soft`. Dates go in the margin as `note` `ink-soft`. Two to three bullets at most, using a plain en dash, and no tree-drawing characters.
@@ -274,7 +276,7 @@ Motion is cold too: quick, exact, rare.
 **Do**
 - Let the work carry the colour: full-saturation screenshots, GIFs and the real photo.
 - Use the width axis for hierarchy: expanded for headings, normal for reading.
-- Caption figures like a lab report. Put dates and asides in the margin.
+- Number projects and caption their figures. Put dates and asides in the margin.
 - Say each fact once. Cut repeated bios, repeated client mentions and filler projects.
 - Write in your own voice, plainly. A slightly informal line is fine.
 - Theme selection, caret, focus and scrollbars from the palette.
@@ -287,6 +289,6 @@ Motion is cold too: quick, exact, rare.
 - Use a centred hero with two buttons, or more than one filled button on a screen.
 - Put screenshots in fake browser frames, or make them grayscale, tinted or masked.
 - Lay projects out in a zigzag of alternating image and text.
-- Put eyebrow labels, uppercase tracked section labels or `01 / 02` numbering above headings.
+- Put eyebrow labels or uppercase tracked section labels above headings, or number anything except projects.
 - Add scroll animations, or any motion besides the one name moment and state changes.
 - Use font sizes outside the seven roles above.
