@@ -36,16 +36,29 @@ const DEMO = {
 /** The site with every unwritten field replaced or hidden. */
 export function withDemo(site: Site): Site {
   const pick = (value: string, demo: string) => (isPlaceholder(value) ? demo : value);
+  // Short facts (a year, a bullet, a flow step) have no earlier wording to fall
+  // back on, so an unwritten one is left out rather than shown as a placeholder.
+  const written = (list: string[] = []) => list.filter((x) => !isPlaceholder(x));
+  const dropBullets = <T extends { points?: string[] }>(entries: T[]) => entries.map((e) => ({ ...e, points: written(e.points) }));
   return {
     ...site,
     summary: pick(site.summary, DEMO.summary),
     now: site.now && pick(site.now, DEMO.now),
     contactNote: pick(site.contactNote, DEMO.contactNote),
     about: site.about.map((p, i) => pick(p, DEMO.about[i] ?? "")).filter(Boolean),
+    experience: dropBullets(site.experience),
+    education: dropBullets(site.education),
+    leadership: dropBullets(site.leadership),
     projects: site.projects.map((p) => {
       const cs = p.caseStudy;
       const unfinished = cs && [cs.problem, cs.approach, cs.whatBroke, cs.result].some(isPlaceholder);
-      return unfinished ? { ...p, caseStudy: undefined } : p;
+      return {
+        ...p,
+        year: isPlaceholder(p.year) ? "" : p.year,
+        myPart: isPlaceholder(p.myPart) ? undefined : p.myPart,
+        flow: p.flow && written(p.flow),
+        caseStudy: unfinished ? undefined : cs,
+      };
     }),
   };
 }

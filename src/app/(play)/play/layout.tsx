@@ -16,7 +16,8 @@ export const viewport: Viewport = { colorScheme: "dark", viewportFit: "cover" };
 // Separate root layout from the professional site; see (professional)/layout.tsx.
 export default function PlayLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${mplus.variable} ${mono.variable}`}>
+    // page.tsx's inline script marks <html> before hydration
+    <html lang="en" className={`${mplus.variable} ${mono.variable}`} suppressHydrationWarning>
       <body>{children}</body>
     </html>
   );

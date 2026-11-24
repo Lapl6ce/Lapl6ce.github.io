@@ -1,4 +1,5 @@
 // Sections live in src/professional/sections; their order here is the page order.
+// Work leads, then what was used to build it; the personal and school record come after.
 
 import ScrollEffects from "@/professional/components/ScrollEffects";
 import OwnerTodo from "@/professional/owner/OwnerTodo";
@@ -9,8 +10,7 @@ import About from "@/professional/sections/About";
 import Experience from "@/professional/sections/Experience";
 import Projects from "@/professional/sections/Projects";
 import Skills from "@/professional/sections/Skills";
-import Education from "@/professional/sections/Education";
-import Leadership from "@/professional/sections/Leadership";
+import Background from "@/professional/sections/Background";
 import Contact from "@/professional/sections/Contact";
 import Footer from "@/professional/sections/Footer";
 
@@ -23,12 +23,11 @@ export default function ProfessionalPage() {
       <Header />
       <main id="main">
         <Hero />
-        <About />
-        <Experience />
         <Projects />
+        <Experience />
         <Skills />
-        <Education />
-        <Leadership />
+        <About />
+        <Background />
         <Contact />
       </main>
       <Footer />

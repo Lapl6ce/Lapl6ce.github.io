@@ -8,9 +8,6 @@ export default function Footer() {
         © {new Date().getFullYear()} {SITE.name} · <a href={ROUTES.play}>try fun mode</a>, a console-style version of this
         site
       </p>
-      <p className="eof" aria-hidden="true">
-        -- EOF --
-      </p>
     </footer>
   );
 }

@@ -42,7 +42,7 @@ export default function SoundToggle() {
       aria-label={on ? "Mute sound effects" : "Turn on sound effects"}
       title={on ? "Sound effects on" : "Sound effects off"}
     >
-      snd:<span className="toggle-state">{on ? "on" : "off"}</span>
+      Sound: <span className="toggle-state">{on ? "on" : "off"}</span>
     </button>
   );
 }

@@ -252,12 +252,21 @@ export default function Xmb() {
     setMonth(new Date().getMonth());
     setCat(Math.max(0, cats.findIndex((c) => c.id === "profile")));
 
-    // The start screen plays on every visit (any key or click skips it);
+    // The start screen plays once per session (any key or click skips it);
     // reduced-motion users go straight to the menu.
     let bootTimer: ReturnType<typeof setTimeout> | undefined;
+    let bootSeen = false;
+    try {
+      bootSeen = sessionStorage.getItem("play-boot") === "1";
+      sessionStorage.setItem("play-boot", "1");
+    } catch {
+      /* storage blocked: show it */
+    }
     if (matchMedia("(prefers-reduced-motion: reduce)").matches) {
       setBooting(false);
       setIntro(false);
+    } else if (bootSeen) {
+      setBooting(false);
     } else {
       bootTimer = setTimeout(() => setBooting(false), 2300);
     }

@@ -129,6 +129,10 @@ export function makeImpulse(ac: BaseAudioContext, seconds: number, decay: number
 
 function audio(): AudioContext | null {
   if (typeof window === "undefined") return null;
+  // A sound asked for before any click or key press could not play anyway, and
+  // creating the context then only earns a console warning.
+  const activation = (navigator as Navigator & { userActivation?: { hasBeenActive: boolean } }).userActivation;
+  if (activation && !activation.hasBeenActive) return null;
   if (!ctx) {
     const AC = window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
     if (!AC) return null;

@@ -48,7 +48,7 @@ export default function SettingsPanel({ initial }: { initial: Settings }) {
   return (
     <main className="settings">
       <p>
-        <a href="/">&lt; back to the site</a>
+        <a href="/">Back to the site</a>
       </p>
       <h1>Settings</h1>
       <p className="settings-note">Dev only: this page and its switches don't exist in the built site.</p>

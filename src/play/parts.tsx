@@ -154,6 +154,11 @@ export function ProjectPanel({ p }: { p: Project }) {
         </ol>
       )}
       <p>{p.description || p.blurb}</p>
+      {p.myPart && (
+        <p>
+          <strong>My part:</strong> {p.myPart}
+        </p>
+      )}
       <InfoTable rows={[["Year", p.year], ["Built with", p.tags.join(" · ")]]} />
       {links.length > 0 && (
         <div className="pbtns">

@@ -1,7 +1,8 @@
 "use client";
 
 /* Nav link to fun mode with a caption explaining it. The caption appears once on
-   a first visit so the link isn't a mystery, then only on hover or focus. */
+   a first visit so the link isn't a mystery, then only on hover or focus. On
+   narrow screens it never appears unasked: there it would sit over the nav. */
 
 import { useEffect, useState } from "react";
 import { ROUTES } from "@/shared/links";
@@ -12,6 +13,7 @@ export default function FunModeLink() {
   const [intro, setIntro] = useState(false);
 
   useEffect(() => {
+    if (matchMedia("(max-width: 720px)").matches) return;
     let seen = false;
     try {
       seen = localStorage.getItem(SEEN_KEY) === "1";
@@ -34,7 +36,7 @@ export default function FunModeLink() {
   return (
     <span className={"fun-mode" + (intro ? " show-tip" : "")}>
       <a className="mode-switch" href={ROUTES.play} aria-describedby="fun-mode-tip">
-        <span aria-hidden="true">&gt;</span> fun mode
+        Fun mode
       </a>
       <span className="fun-tip" id="fun-mode-tip" role="tooltip">
         A playful, console-style version of this site

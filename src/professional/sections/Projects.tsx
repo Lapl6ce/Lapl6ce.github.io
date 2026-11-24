@@ -1,10 +1,12 @@
 import { SITE, liveSites, featuredFirst, type Project } from "@/content/site";
 import { DEMO_ACTIVE } from "@/content/demo";
-import { external } from "@/shared/links";
 import { findImage } from "../assets";
-import BrowserFrame from "../components/BrowserFrame";
+import LinkList from "../components/LinkList";
+import OutLink from "../components/OutLink";
 import ImageNeeded from "../components/ImageNeeded";
 import ProjectMedia from "../components/ProjectMedia";
+import Section from "../components/Section";
+import Shot from "../components/Shot";
 import OwnerText from "../owner/OwnerText";
 
 const CASE_PARTS = [
@@ -14,35 +16,43 @@ const CASE_PARTS = [
   ["result", "Result"],
 ] as const;
 
-/** Code/demo links plus any live sites after the first (the first is already the picture). */
-function projectLinks(p: Project): [string, string][] {
-  const code = Object.entries(p.links).filter((e): e is [string, string] => !!e[1]);
-  return [...code, ...liveSites(p).slice(1).map((s) => [s.name, s.url] as [string, string])];
+const LABELS: Record<string, string> = { code: "Code", demo: "Demo" };
+
+/** Code/demo links plus live sites. A featured project's figure caption
+ *  already links its first live site and its code, so `withFigure` leaves those
+ *  out; a "More projects" row has no figure and keeps everything. */
+function projectLinks(p: Project, withFigure: boolean): [string, string][] {
+  const code = Object.entries(p.links)
+    .filter((e): e is [string, string] => !!e[1] && !(withFigure && e[0] === "code"))
+    .map(([k, url]): [string, string] => [LABELS[k] ?? k, url]);
+  const sites = liveSites(p).slice(withFigure ? 1 : 0);
+  return [...code, ...sites.map((s): [string, string] => [s.name, s.url])];
 }
 
-function Links({ p }: { p: Project }) {
-  const links = projectLinks(p);
-  if (!links.length) return null;
+/** For team projects in a teammate's repo: the owner's own share of the work. */
+function MyPart({ p }: { p: Project }) {
+  if (!p.myPart) return null;
   return (
-    <div className="project-links">
-      {links.map(([label, url]) => (
-        <a key={url} href={url} {...external(url)}>
-          {label}
-          <span aria-hidden="true"> ↗</span>
-        </a>
-      ))}
-    </div>
+    <p className="my-part">
+      <span className="my-part-label">My part:</span> {p.myPart}
+    </p>
   );
 }
 
-function Tags({ tags }: { tags: string[] }) {
-  if (!tags.length) return null;
+/** Margin annotation for a project: the year (when known) over the stack, as
+ *  data rather than a row of chips. Every project has a stack, so every row
+ *  carries a note even when the year is missing. */
+function Notes({ p }: { p: Project }) {
   return (
-    <ul className="tags" aria-label="Technologies">
-      {tags.map((t) => (
-        <li key={t}>{t}</li>
-      ))}
-    </ul>
+    <div className="margin data project-notes">
+      {p.year && <p>{p.year}</p>}
+      {p.tags.length > 0 && (
+        <p className="stack">
+          <span className="sr-only">Built with </span>
+          {p.tags.join(" / ")}
+        </p>
+      )}
+    </div>
   );
 }
 
@@ -53,7 +63,12 @@ function CaseStudy({ p }: { p: Project }) {
   const images = cs.images.map((src) => ({ src, found: findImage(src) })).filter((img) => img.found || !DEMO_ACTIVE);
   return (
     <details className="case-study">
-      <summary>Read the case study</summary>
+      <summary>
+        Read the case study
+        <svg className="chev" width="10" height="10" viewBox="0 0 10 10" aria-hidden="true" focusable="false">
+          <path d="M3.5 1.5 7 5l-3.5 3.5" fill="none" stroke="currentColor" strokeWidth="1.5" />
+        </svg>
+      </summary>
       {CASE_PARTS.map(([key, label]) => (
         <div key={key} className="case-part">
           <h4>{label}</h4>
@@ -63,11 +78,7 @@ function CaseStudy({ p }: { p: Project }) {
       {images.length > 0 && (
         <div className="case-images">
           {images.map(({ src, found }) =>
-            found ? (
-              <BrowserFrame key={src} name={p.name} label={found.split("/").pop() ?? p.name} image={found} />
-            ) : (
-              <ImageNeeded key={src} path={src} />
-            ),
+            found ? <Shot key={src} image={found} alt={`${p.name}: ${found.split("/").pop()}`} label={p.name} /> : <ImageNeeded key={src} path={src} />,
           )}
         </div>
       )}
@@ -75,38 +86,42 @@ function CaseStudy({ p }: { p: Project }) {
   );
 }
 
-/** Featured projects: picture and write-up side by side, alternating sides. */
-function Feature({ p }: { p: Project }) {
+/** A featured project: figure first, then what it is. The caption carries the
+ *  year and the stack sits under the title, beside where the eye already is,
+ *  so the margin stays empty here. */
+function Feature({ p, n }: { p: Project; n: number }) {
   return (
-    <li className="feature">
-      <div className="feature-media">
-        <ProjectMedia p={p} />
-      </div>
-      <div className="feature-text">
-        <div className="project-head">
-          <h3>{p.name}</h3>
-          {p.year && <span className="meta">{p.year}</span>}
-        </div>
-        <p>{p.description || p.blurb}</p>
-        <Tags tags={p.tags} />
-        <Links p={p} />
+    <li className="entry feature">
+      <div className="entry-body">
+        <ProjectMedia p={p} n={n} />
+        <h3>{p.name}</h3>
+        {p.tags.length > 0 && (
+          <p className="feature-stack">
+            <span className="sr-only">Built with </span>
+            {p.tags.join(" / ")}
+          </p>
+        )}
+        <p className="feature-desc">{p.description || p.blurb}</p>
+        <MyPart p={p} />
+        <LinkList className="project-links" links={projectLinks(p, true)} />
         <CaseStudy p={p} />
       </div>
     </li>
   );
 }
 
-/** Everything else: one line each in a plain index, like a directory listing. */
+/** Everything else: one ruled row each. The name is the link. */
 function IndexRow({ p }: { p: Project }) {
+  const [first, ...more] = projectLinks(p, false);
   return (
-    <li className="index-row">
-      <div className="project-head">
-        <h3>{p.name}</h3>
-        {p.year && <span className="meta">{p.year}</span>}
+    <li className="entry index-row">
+      <Notes p={p} />
+      <div className="entry-body">
+        <h3>{first ? <OutLink className="title-link" url={first[1]}>{p.name}</OutLink> : p.name}</h3>
+        <p className="index-blurb">{p.blurb}</p>
+        <MyPart p={p} />
+        <LinkList className="project-links" links={more} />
       </div>
-      <p>{p.blurb}</p>
-      <Tags tags={p.tags} />
-      <Links p={p} />
     </li>
   );
 }
@@ -117,25 +132,24 @@ export default function Projects() {
   // entries with something to click lead the index; sort is stable, so site.ts order holds within each group
   const rest = projects
     .filter((p) => !p.featured)
-    .sort((a, b) => Number(projectLinks(b).length > 0) - Number(projectLinks(a).length > 0));
+    .sort((a, b) => Number(projectLinks(b, false).length > 0) - Number(projectLinks(a, false).length > 0));
   return (
-    <section className="section" id="projects" aria-labelledby="proj-h">
-      <h2 id="proj-h">Projects</h2>
-      <ul className="features">
-        {featured.map((p) => (
-          <Feature key={p.name} p={p} />
+    <Section id="projects" title="Projects">
+      <ol className="entries features">
+        {featured.map((p, i) => (
+          <Feature key={p.name} p={p} n={i + 1} />
         ))}
-      </ul>
+      </ol>
       {rest.length > 0 && (
         <>
           <h3 className="sub-h">More projects</h3>
-          <ul className="project-index">
+          <ul className="entries project-index">
             {rest.map((p) => (
               <IndexRow key={p.name} p={p} />
             ))}
           </ul>
         </>
       )}
-    </section>
+    </Section>
   );
 }
